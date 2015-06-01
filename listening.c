@@ -17,6 +17,11 @@ int listening(pid_t pid, int port) {
 			fprintf(stderr, "failed to accept client socket\n");
 			continue;
 		}
+
+		pid_t sock_worker = fork();
+		if( sock_worker != 0 ) {
+			
+		}
 	}
 
 	return 0;
