@@ -26,11 +26,13 @@ int client_worker_main_loop(pid_t pid, int sock) {
 		}
 
 		// check message queue
-		int msg_exist = check_message_queue(sock);
+		struct message_buffer msg_response;
+		memset(&msg_response, 0, sizeof(struct message_buffer));
+		int msg_exist = check_message_queue(msg_queue_key_id, sock, &msg_response);
 
 		// if exist message to send, write message to client
 		if( msg_exist ) {
-			if( ! send_message_to_client(sock, "") ) {
+			if( ! send_message_to_client(sock, msg_response.buffer) ) {
 
 			} else {
 				// error
@@ -48,12 +50,17 @@ int send_message_to_main_server(key_t mq_key, int sock, char message[MAX_LENGTH]
 	strcpy(msg.buffer, message);
 	if( msgsnd(mq_key, (void *)&msg, sizeof(struct message_buffer), 0) == -1 ) {
 		// error!
+		return -1;
 	}
 
 	return 0;
 }
 
-int check_message_queue(int sock) {
+int check_message_queue(key_t mq_key, int sock, struct message_buffer* msg) {
+	if (msgrcv( mq_key, (void *)msg, sizeof(struct message_buffer), sock, IPC_NOWAIT) != -1) {
+		return -1;
+	}
+
 	return 0;
 }
 

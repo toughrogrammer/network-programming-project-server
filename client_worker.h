@@ -4,11 +4,12 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include "util.h"
+#include "data_structure.h"
 
 
 int client_worker_main_loop(pid_t pid, int sock);
 int send_message_to_main_server(key_t mq_key, int sock, char message[MAX_LENGTH]);
-int check_message_queue(int sock);
+int check_message_queue(key_t mq_key, int sock, struct message_buffer* msg);
 int send_message_to_client(int sock, char message[MAX_LENGTH]);
 
 #endif

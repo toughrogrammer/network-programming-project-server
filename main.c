@@ -12,7 +12,9 @@
 #include <errno.h>
 
 
-void route_sign_up(JSON_Object *json);
+void route_sign_up(JSON_Object *json, key_t mq_key, long target);
+void route_sign_in(JSON_Object *json, key_t mq_key, long target);
+void route_chatting(JSON_Object *json, key_t mq_key, long target);
 
 int main_server_quit;
 
@@ -45,18 +47,46 @@ int main() {
 			int msg_target = (int)json_object_get_number(json_body, "target");
 			switch(msg_target) {
 			case MSG_TARGET_SIGN_UP:
-				route_sign_up(json_body);
+				route_sign_up(json_body, msg_queue_key_id, msg.sock);
+				break;
+			case MSG_TARGET_SIGN_IN:
+				route_sign_in(json_body, msg_queue_key_id, msg.sock);
+				break;
+			case MSG_TARGET_CHATTING:
+				route_chatting(json_body, msg_queue_key_id, msg.sock);
 				break;
 			}
 
 			json_value_free(json_value);
-        }
+		}
 	}
 
 
 	return 0;
 }
 
-void route_sign_up(JSON_Object *json) {
+void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_sign_up\n");
+
+	struct message_buffer msg;
+	msg.type = target;
+	strcpy(msg.buffer, "response");
+	if( msgsnd(mq_key, (void *)&msg, sizeof(struct message_buffer), 0) == -1 ) {
+		// error!
+	}
+}
+
+void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
+	printf("(main) route_sign_in\n");
+
+	struct message_buffer msg;
+	msg.type = target;
+	strcpy(msg.buffer, "response");
+	if( msgsnd(mq_key, (void *)&msg, sizeof(struct message_buffer), 0) == -1 ) {
+		// error!
+	}
+}
+
+void route_chatting(JSON_Object *json, key_t mq_key, long target) {
+	
 }
