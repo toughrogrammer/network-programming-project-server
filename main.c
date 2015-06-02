@@ -125,11 +125,33 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	sprintf(access_token, "user%d", connected);
 	connected++;
 
+	// find user
+	const char* submitted_id = json_object_get_string(json, "id");
+	const char* submitted_password = json_object_get_string(json, "password");
+
 	khint_t k;
+	int selected_pk;
+	for (k = kh_begin(user_table); k != kh_end(user_table); ++k) {
+		if (kh_exist(user_table, k)) {
+			struct user_data* userdata = kh_value(user_table, k);
+			if( strcmp(userdata->id, submitted_password) == 0
+				&& strcmp(userdata->password, submitted_password) == 0 ) {
+				selected_pk = userdata->pk;
+				break;
+			}
+		}
+	}
+	if( k == kh_end(user_table) ) {
+		// not found user
+		// TODO: refactoring
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, "{\"result\":2001}\r\n");
+		return;
+	}
+	
 	for (k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
 		if (kh_exist(connected_user_table, k)) {
 			struct connected_user* userdata = kh_value(connected_user_table, k);
-			if( userdata->pk == 999 ) {
+			if( userdata->pk == selected_pk ) {
 				break;
 			}
 		}
@@ -155,12 +177,21 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 
 	print_users_status();
 
-	strcat(access_token, "\r\n");
-	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, access_token) ) {
+
+	JSON_Value *root_value = json_value_init_object();
+    JSON_Object *root_object = json_value_get_object(root_value);
+    json_object_set_number(root_object, "result", RESULT_OK_SIGN_IN);
+    json_object_set_string(root_object, "access_token", access_token);
+
+    char response[MAX_LENGTH];
+    sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response) ) {
 		// success
 	} else {
 		// error
 	}
+
+	json_value_free(root_value);
 }
 
 void route_chatting(JSON_Object *json, key_t mq_key, long target) {
