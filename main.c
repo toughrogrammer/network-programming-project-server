@@ -81,7 +81,19 @@ void init_variables() {
 }
 
 void load_data() {
+	int ret;
+	khint_t k;
 
+	// add user data for debugging
+	for( int i = 0; i < 5; i ++ ) {
+		struct user_data* new_user_data = (struct user_data*)malloc(sizeof(struct user_data));
+		memset(new_user_data, 0, sizeof(struct user_data));
+		new_user_data->pk = i;
+		sprintf(new_user_data->id, "testuser%d", i);
+		sprintf(new_user_data->password, "testuser%d", i);
+		k = kh_put(pk_int, user_table, i, &ret);
+		kh_value(user_table, k) = new_user_data;
+	}
 }
 
 void print_users_status() {

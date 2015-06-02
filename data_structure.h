@@ -3,6 +3,8 @@
 
 #include "library/klib/khash.h"
 
+#define MAX_LENGTH_ID 32
+#define MAX_LENGTH_PASSWORD 128
 #define MAX_LENGTH_ACCESS_TOKEN 32
 
 
@@ -14,6 +16,8 @@ struct message_buffer {
 
 struct user_data {
 	long pk;
+	char id[MAX_LENGTH_ID];
+	char password[MAX_LENGTH_PASSWORD];
 	long character_type;
 	long level;
 };
