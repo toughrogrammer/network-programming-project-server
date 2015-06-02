@@ -3,6 +3,8 @@
 
 #include "library/klib/khash.h"
 
+#define MAX_LENGTH_ACCESS_TOKEN 32
+
 
 struct message_buffer {
 	long type;
@@ -11,12 +13,19 @@ struct message_buffer {
 };
 
 struct user_data {
-	long status;
+	long pk;
 	long character_type;
 	long level;
-	char access_token[32];
 };
 
-KHASH_MAP_INIT_STR(str, struct user_data*);
+struct connected_user {
+	long pk;
+	long mq_id;
+	long status;
+	char access_token[MAX_LENGTH_ACCESS_TOKEN];
+};
+
+KHASH_MAP_INIT_INT(pk_int, struct user_data*);
+KHASH_MAP_INIT_STR(str, struct connected_user*);
 
 #endif

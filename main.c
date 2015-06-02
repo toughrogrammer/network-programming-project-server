@@ -13,6 +13,7 @@
 
 
 void init_variables();
+void load_data();
 void print_users_status();
 void route_sign_up(JSON_Object *json, key_t mq_key, long target);
 void route_sign_in(JSON_Object *json, key_t mq_key, long target);
@@ -20,7 +21,8 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target);
 
 int main_server_quit;
 
-khash_t(str) *users_table;
+khash_t(pk_int) *user_table;
+khash_t(str) *connected_user_table;
 
 
 int main() {
@@ -39,6 +41,7 @@ int main() {
 	}
 
 	init_variables();
+	load_data();
 
 	while(! main_server_quit) {
 		struct message_buffer received;
@@ -73,15 +76,20 @@ int main() {
 }
 
 void init_variables() {
-	users_table = kh_init(str);
+	user_table = kh_init(pk_int);
+	connected_user_table = kh_init(str);
+}
+
+void load_data() {
+
 }
 
 void print_users_status() {
 	printf("--users--\n");
-	for (khint_t k = kh_begin(users_table); k != kh_end(users_table); ++k) {
-		if (kh_exist(users_table, k)) {
-			struct user_data* userdata = kh_value(users_table, k);
-			printf("%d %s\n", (int)userdata->status, userdata->access_token);
+	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
+		if (kh_exist(connected_user_table, k)) {
+			struct connected_user* user = kh_value(connected_user_table, k);
+			printf("%d %d %s\n", (int)user->mq_id, (int)user->status, user->access_token);
 		}
 	}
 	printf("---------\n");
@@ -105,14 +113,33 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	sprintf(access_token, "user%d", connected);
 	connected++;
 
-	struct user_data* userdata = (struct user_data*)malloc(sizeof(struct user_data));
-	memset(userdata, 0, sizeof(struct user_data));
-	userdata->status = USER_STATUS_LOBBY;
-	strcpy(userdata->access_token, access_token);
+	khint_t k;
+	for (k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
+		if (kh_exist(connected_user_table, k)) {
+			struct connected_user* userdata = kh_value(connected_user_table, k);
+			if( userdata->pk == 999 ) {
+				break;
+			}
+		}
+	}
+	if( k == kh_end(connected_user_table) ) {
+		// new connection
+		struct connected_user* new_connected_user = (struct connected_user*)malloc(sizeof(struct connected_user));
+		memset(new_connected_user, 0, sizeof(struct connected_user));
+		new_connected_user->mq_id = target;
+		new_connected_user->status = USER_STATUS_LOBBY;
+		strcpy(new_connected_user->access_token, access_token);
 
-	int ret;
-	khint_t k = kh_put(str, users_table, access_token, &ret);
-	kh_value(users_table, k) = userdata;
+		int ret;
+		k = kh_put(str, connected_user_table, access_token, &ret);
+		kh_value(connected_user_table, k) = new_connected_user;
+	} else {
+		// there is prev connection of this user
+		struct connected_user* new_connected_user = kh_value(connected_user_table, k);
+		new_connected_user->mq_id = target;
+		new_connected_user->status = USER_STATUS_LOBBY;
+		strcpy(new_connected_user->access_token, access_token);
+	}
 
 	print_users_status();
 
