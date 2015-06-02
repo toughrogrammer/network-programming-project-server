@@ -12,11 +12,16 @@
 #include <errno.h>
 
 
+void init_variables();
+void print_users_status();
 void route_sign_up(JSON_Object *json, key_t mq_key, long target);
 void route_sign_in(JSON_Object *json, key_t mq_key, long target);
 void route_chatting(JSON_Object *json, key_t mq_key, long target);
 
 int main_server_quit;
+
+khash_t(str) *users_table;
+
 
 int main() {
 	key_t msg_queue_key_id = msgget((key_t)MQ_KEY, IPC_CREAT | 0666);
@@ -32,6 +37,8 @@ int main() {
 	if( pid != 0 ) {
 		return listening(pid, 10101);
 	}
+
+	init_variables();
 
 	while(! main_server_quit) {
 		struct message_buffer received;
@@ -65,6 +72,21 @@ int main() {
 	return 0;
 }
 
+void init_variables() {
+	users_table = kh_init(str);
+}
+
+void print_users_status() {
+	printf("--users--\n");
+	for (khint_t k = kh_begin(users_table); k != kh_end(users_table); ++k) {
+		if (kh_exist(users_table, k)) {
+			struct user_data* userdata = kh_value(users_table, k);
+			printf("%d %s\n", (int)userdata->status, userdata->access_token);
+		}
+	}
+	printf("---------\n");
+}
+
 void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_sign_up\n");
 
@@ -78,7 +100,24 @@ void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
 void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_sign_in\n");
 
-	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, "response") ) {
+	static int connected = 0;
+	char access_token[MAX_LENGTH];
+	sprintf(access_token, "user%d", connected);
+	connected++;
+
+	struct user_data* userdata = (struct user_data*)malloc(sizeof(struct user_data));
+	memset(userdata, 0, sizeof(struct user_data));
+	userdata->status = USER_STATUS_LOBBY;
+	strcpy(userdata->access_token, access_token);
+
+	int ret;
+	khint_t k = kh_put(str, users_table, access_token, &ret);
+	kh_value(users_table, k) = userdata;
+
+	print_users_status();
+
+	strcat(access_token, "\r\n");
+	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, access_token) ) {
 		// success
 	} else {
 		// error

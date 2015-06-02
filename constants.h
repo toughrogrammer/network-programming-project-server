@@ -15,4 +15,7 @@
 #define MSG_TARGET_LEAVE_ROOM 8
 #define MSG_TARGET_QUIT 9
 
+#define USER_STATUS_LOBBY 0
+#define USER_STATUS_IN_ROOM 1
+
 #endif
