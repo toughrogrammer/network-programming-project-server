@@ -7,7 +7,7 @@
 
 struct message_buffer {
 	long type;
-	int sock;
+	long from;
 	char buffer[1024];
 };
 

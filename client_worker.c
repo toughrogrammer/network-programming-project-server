@@ -44,16 +44,12 @@ int client_worker_main_loop(pid_t pid, int sock) {
 }
 
 int send_message_to_main_server(key_t mq_key, int sock, char message[MAX_LENGTH]) {
-	struct message_buffer msg;
-	msg.type = MQ_ID_MAIN_SERVER;
-	msg.sock = sock;
-	strcpy(msg.buffer, message);
-	if( msgsnd(mq_key, (void *)&msg, sizeof(struct message_buffer), 0) == -1 ) {
-		// error!
-		return -1;
+	if( ! send_message_to_queue(mq_key, sock, MQ_ID_MAIN_SERVER, message) ) {
+		// success
+		return 0;
 	}
 
-	return 0;
+	return -1;
 }
 
 int check_message_queue(key_t mq_key, int sock, struct message_buffer* msg) {

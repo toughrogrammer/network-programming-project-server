@@ -34,12 +34,12 @@ int main() {
 	}
 
 	while(! main_server_quit) {
-		struct message_buffer msg;
-		if (msgrcv( msg_queue_key_id, (void *)&msg, sizeof(struct message_buffer), MQ_ID_MAIN_SERVER, IPC_NOWAIT) != -1) {
-	        JSON_Value *json_value = json_parse_string(msg.buffer);
+		struct message_buffer received;
+		if (msgrcv( msg_queue_key_id, (void *)&received, sizeof(struct message_buffer), MQ_ID_MAIN_SERVER, IPC_NOWAIT) != -1) {
+	        JSON_Value *json_value = json_parse_string(received.buffer);
 			if( json_value == NULL ) {
 				// failed to parsing message
-				printf("(sock:%d) failed to parsing\n", msg.sock);
+				printf("(from:%ld) failed to parsing\n%s", received.from, received.buffer);
 				continue;
 			}
 
@@ -47,13 +47,13 @@ int main() {
 			int msg_target = (int)json_object_get_number(json_body, "target");
 			switch(msg_target) {
 			case MSG_TARGET_SIGN_UP:
-				route_sign_up(json_body, msg_queue_key_id, msg.sock);
+				route_sign_up(json_body, msg_queue_key_id, received.from);
 				break;
 			case MSG_TARGET_SIGN_IN:
-				route_sign_in(json_body, msg_queue_key_id, msg.sock);
+				route_sign_in(json_body, msg_queue_key_id, received.from);
 				break;
 			case MSG_TARGET_CHATTING:
-				route_chatting(json_body, msg_queue_key_id, msg.sock);
+				route_chatting(json_body, msg_queue_key_id, received.from);
 				break;
 			}
 
@@ -68,22 +68,20 @@ int main() {
 void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_sign_up\n");
 
-	struct message_buffer msg;
-	msg.type = target;
-	strcpy(msg.buffer, "response");
-	if( msgsnd(mq_key, (void *)&msg, sizeof(struct message_buffer), 0) == -1 ) {
-		// error!
+	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, "response") ) {
+		// success
+	} else {
+		// error
 	}
 }
 
 void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_sign_in\n");
 
-	struct message_buffer msg;
-	msg.type = target;
-	strcpy(msg.buffer, "response");
-	if( msgsnd(mq_key, (void *)&msg, sizeof(struct message_buffer), 0) == -1 ) {
-		// error!
+	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, "response") ) {
+		// success
+	} else {
+		// error
 	}
 }
 

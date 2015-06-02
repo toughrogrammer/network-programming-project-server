@@ -1,4 +1,9 @@
 #include "util.h"
+#include "data_structure.h"
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+
 
 void clear_recv_buffer(int sock_client) {
 	char buffer[MAX_LENGTH];
@@ -64,4 +69,13 @@ void str_tolower(char* str) {
 			str[i] += 'a' - 'A';
 		}
 	}
+}
+
+int send_message_to_queue(key_t mq_key, long from, long to, const char* message) {
+	struct message_buffer msg;
+	msg.type = to;
+	msg.from = from;
+	strcpy(msg.buffer, message);
+
+	return msgsnd(mq_key, (void *)&msg, sizeof(struct message_buffer), 0);
 }
