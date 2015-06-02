@@ -175,6 +175,7 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 		strcpy(new_connected_user->access_token, access_token);
 	}
 
+	// logging
 	print_users_status();
 
 
@@ -185,13 +186,13 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 
     char response[MAX_LENGTH];
     sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+    json_value_free(root_value);
+
 	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response) ) {
 		// success
 	} else {
 		// error
 	}
-
-	json_value_free(root_value);
 }
 
 void route_chatting(JSON_Object *json, key_t mq_key, long target) {
