@@ -1,5 +1,7 @@
 #include "listening.h"
 #include "util.h"
+#include "client_worker.h"
+
 
 int listening(pid_t pid, int port) {
 	struct sockaddr_in servaddr;
@@ -18,9 +20,9 @@ int listening(pid_t pid, int port) {
 			continue;
 		}
 
-		pid_t sock_worker = fork();
-		if( sock_worker != 0 ) {
-			
+		pid_t pid_worker = fork();
+		if( pid_worker != 0 ) {
+			return client_worker_main_loop(pid_worker, sock_client);
 		}
 	}
 
