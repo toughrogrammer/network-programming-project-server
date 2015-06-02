@@ -49,7 +49,7 @@ int main() {
 	while(! main_server_quit) {
 		struct message_buffer received;
 		if (msgrcv( msg_queue_key_id, (void *)&received, sizeof(struct message_buffer), MQ_ID_MAIN_SERVER, IPC_NOWAIT) != -1) {
-	        JSON_Value *json_value = json_parse_string(received.buffer);
+			JSON_Value *json_value = json_parse_string(received.buffer);
 			if( json_value == NULL ) {
 				// failed to parsing message
 				printf("(from:%ld) failed to parsing\n%s", received.from, received.buffer);
@@ -170,9 +170,9 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 
 	struct user_data* user_data = find_user_data(submitted_id, submitted_password);
 	if( user_data == NULL ) {
-		// not found user
-		// TODO: refactoring
-		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, "{\"result\":2001}\r\n");
+		char response[MAX_LENGTH];
+		build_simple_response(response, RESULT_ERROR_INVALID_AUTH);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 		return;
 	}
 
@@ -180,20 +180,13 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	if( connected_user == NULL ) {
 		// new connection
 		struct connected_user* new_connected_user = (struct connected_user*)malloc(sizeof(struct connected_user));
-		memset(new_connected_user, 0, sizeof(struct connected_user));
-		new_connected_user->pk = user_data->pk;
-		new_connected_user->mq_id = target;
-		new_connected_user->status = USER_STATUS_LOBBY;
-		strcpy(new_connected_user->access_token, access_token);
+		fill_connected_user(new_connected_user, user_data->pk, target, USER_STATUS_LOBBY, access_token);
 
 		int ret;
 		khint_t k = kh_put(str, connected_user_table, access_token, &ret);
 		kh_value(connected_user_table, k) = new_connected_user;
 	} else {
-		connected_user->pk = user_data->pk;
-		connected_user->mq_id = target;
-		connected_user->status = USER_STATUS_LOBBY;
-		strcpy(connected_user->access_token, access_token);
+		fill_connected_user(connected_user, user_data->pk, target, USER_STATUS_LOBBY, access_token);
 	}
 
 	// logging
@@ -201,13 +194,13 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 
 
 	JSON_Value *root_value = json_value_init_object();
-    JSON_Object *root_object = json_value_get_object(root_value);
-    json_object_set_number(root_object, "result", RESULT_OK_SIGN_IN);
-    json_object_set_string(root_object, "access_token", access_token);
+	JSON_Object *root_object = json_value_get_object(root_value);
+	json_object_set_number(root_object, "result", RESULT_OK_SIGN_IN);
+	json_object_set_string(root_object, "access_token", access_token);
 
-    char response[MAX_LENGTH];
-    sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
-    json_value_free(root_value);
+	char response[MAX_LENGTH];
+	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	json_value_free(root_value);
 
 	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response) ) {
 		// success

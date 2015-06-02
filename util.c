@@ -1,4 +1,5 @@
 #include "util.h"
+#include "library/parson/parson.h"
 
 
 void clear_recv_buffer(int sock_client) {
@@ -78,4 +79,22 @@ int send_message_to_queue(key_t mq_key, long from, long to, const char* message)
 
 int check_message_queue(key_t mq_key, int id, struct message_buffer* msg) {
 	return msgrcv( mq_key, (void *)msg, sizeof(struct message_buffer), id, IPC_NOWAIT);
+}
+
+void fill_connected_user(struct connected_user* user, int pk, int mq_id, int status, const char* access_token) {
+	memset(user, 0, sizeof(struct connected_user));
+	user->pk = pk;
+	user->mq_id = mq_id;
+	user->status = status;
+	strcpy(user->access_token, access_token);
+}
+
+void build_simple_response(char* dest, int code) {
+	JSON_Value *root_value = json_value_init_object();
+	JSON_Object *root_object = json_value_get_object(root_value);
+	json_object_set_number(root_object, "result", code);
+
+	sprintf(dest, "%s\r\n", json_serialize_to_string(root_value));
+	
+	json_value_free(root_value);
 }
