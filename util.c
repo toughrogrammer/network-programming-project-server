@@ -1,8 +1,4 @@
 #include "util.h"
-#include "data_structure.h"
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
 
 
 void clear_recv_buffer(int sock_client) {
@@ -78,4 +74,8 @@ int send_message_to_queue(key_t mq_key, long from, long to, const char* message)
 	strcpy(msg.buffer, message);
 
 	return msgsnd(mq_key, (void *)&msg, sizeof(struct message_buffer), 0);
+}
+
+int check_message_queue(key_t mq_key, int id, struct message_buffer* msg) {
+	return msgrcv( mq_key, (void *)msg, sizeof(struct message_buffer), id, IPC_NOWAIT);
 }
