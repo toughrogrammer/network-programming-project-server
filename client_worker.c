@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/ioctl.h>
 
 
 int client_worker_main_loop(pid_t pid, int sock) {
@@ -16,13 +17,17 @@ int client_worker_main_loop(pid_t pid, int sock) {
 	}
 	printf("(client_worker) msg_queue_key_id : %d\n", msg_queue_key_id);
 
-	char buffer[MAX_LENGTH];
 	while(1) {
-		memset(buffer, 0, sizeof(buffer));
-		ssize_t length = read_line(sock, buffer, MAX_LENGTH);
-		if( length > 0 ) {
-			// send message that is received from client to main server
-			send_message_to_main_server(msg_queue_key_id, sock, buffer);
+		// read when there are bytes in receive queue
+		int readable_bytes;
+		ioctl(sock, FIONREAD, &readable_bytes);
+		if( readable_bytes > 0 ) {
+			char buffer[MAX_LENGTH] = { 0, };
+			ssize_t length = read_line(sock, buffer, MAX_LENGTH);
+			if( length > 0 ) {
+				// send message that is received from client to main server
+				send_message_to_main_server(msg_queue_key_id, sock, buffer);
+			}
 		}
 
 		// check message queue

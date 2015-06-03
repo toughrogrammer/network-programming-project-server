@@ -20,6 +20,7 @@ struct connected_user* find_connected_user_by_access_token(const char* access_to
 struct connected_user* find_connected_user_by_pk(int pk);
 void route_sign_up(JSON_Object *json, key_t mq_key, long target);
 void route_sign_in(JSON_Object *json, key_t mq_key, long target);
+void route_sign_out(JSON_Object *json, key_t mq_key, long target);
 void route_chatting(JSON_Object *json, key_t mq_key, long target);
 
 int main_server_quit;
@@ -37,6 +38,16 @@ int main() {
 		return 1;
 	}
 	printf("(main) msg_queue_key_id : %d\n", msg_queue_key_id);
+	// clear message queue
+	int removed_msg_count = 0;
+	while(1) {
+		struct message_buffer msg;
+		if( msgrcv(msg_queue_key_id, (void*)&msg, sizeof(struct  message_buffer), 0, IPC_NOWAIT) == -1 ) {
+			break;
+		}
+		printf("\r(main) cleared message count : %d", ++removed_msg_count);
+	}
+	printf("\n");
 
 	pid_t pid = fork();
 	if( pid != 0 ) {
@@ -67,6 +78,9 @@ int main() {
 				break;
 			case MSG_TARGET_CHATTING:
 				route_chatting(json_body, msg_queue_key_id, received.from);
+				break;
+			case MSG_TARGET_QUIT:
+				route_sign_out(json_body, msg_queue_key_id, received.from);
 				break;
 			}
 
@@ -202,11 +216,34 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
 	json_value_free(root_value);
 
-	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response) ) {
+	if( send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response) != -1 ) {
 		// success
 	} else {
 		// error
 	}
+}
+
+void route_sign_out(JSON_Object *json, key_t mq_key, long target) {
+	printf("(main) route_sign_out\n");
+
+	const char* access_token = json_object_get_string(json, "access_token");
+	khint_t k = kh_get(str, connected_user_table, access_token);
+	if( k == kh_end(connected_user_table) ) {
+		char response[MAX_LENGTH];
+		build_simple_response(response, RESULT_ERROR_INVALID_CONNECTION);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		return;
+	}
+	free(kh_value(connected_user_table, k));
+	kh_del(str, connected_user_table, k);
+
+	// logging
+	print_users_status();
+
+	char response[MAX_LENGTH];
+	build_simple_response(response, REUSLT_OK_REQUEST_LOBBY_UPDATE);
+	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+	printf("(main) send_message_to_queue\n");
 }
 
 void route_chatting(JSON_Object *json, key_t mq_key, long target) {

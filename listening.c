@@ -10,11 +10,12 @@ int listening(pid_t pid, int port) {
 
 	bind(sock_listen, (struct sockaddr *) &servaddr, sizeof(servaddr));
 	
+	printf("(listening) start listen\n");
 	listen(sock_listen, 10);
 
 	while(1) {
 		int sock_client = accept(sock_listen, (struct sockaddr*) NULL, NULL);
-		printf("(%d) accpet : %d\n", pid, sock_client);
+		printf("(listening) accpet : %d\n", sock_client);
 		if( sock_client < 0 ) {
 			fprintf(stderr, "failed to accept client socket\n");
 			continue;
