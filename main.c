@@ -19,9 +19,12 @@ struct user_data* find_user_data(const char* id, const char* password);
 struct connected_user* find_connected_user_by_access_token(const char* access_token);
 struct connected_user* find_connected_user_by_pk(int pk);
 char* find_user_id_by_access_token(const char* access_token);
+void get_user_list(int location, JSON_Array *arr);
+void get_room_list(JSON_Array *arr);
 void route_sign_up(JSON_Object *json, key_t mq_key, long target);
 void route_sign_in(JSON_Object *json, key_t mq_key, long target);
 void route_sign_out(JSON_Object *json, key_t mq_key, long target);
+void route_check_lobby(JSON_Object *json, key_t mq_key, long target);
 void route_chatting(JSON_Object *json, key_t mq_key, long target);
 
 int main_server_quit;
@@ -82,6 +85,9 @@ int main() {
 				break;
 			case MSG_TARGET_QUIT:
 				route_sign_out(json_body, msg_queue_key_id, received.from);
+				break;
+			case MSG_TARGET_CHECK_LOBBY:
+				route_check_lobby(json_body, msg_queue_key_id, received.from);
 				break;
 			}
 
@@ -169,6 +175,18 @@ char* find_user_id_by_access_token(const char* access_token) {
 	struct user_data* userdata = kh_value(user_table, k);
 
 	return userdata->id;
+}
+
+void get_user_list(int location, JSON_Array *arr) {
+	if( location == 0 ) {
+		// lobby users
+	} else {
+		// room users
+	}
+}
+
+void get_room_list(JSON_Array *arr) {
+
 }
 
 void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
@@ -287,4 +305,34 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 			}
 		}
 	}
+}
+
+void route_check_lobby(JSON_Object *json, key_t mq_key, long target) {
+	printf("(main) route_check_lobby\n");
+
+	const char* access_token = json_object_get_string(json, "access_token");
+	// check this user exist in connected user list
+	// if not exist, respones error to target
+
+	JSON_Value *root_value = json_value_init_object();
+	JSON_Object *root_object = json_value_get_object(root_value);
+	json_object_set_number(root_object, "result", REUSLT_OK_STATE_LOBBY);
+
+	json_object_set_value(root_object, "data", json_value_init_object());
+	JSON_Value *value_data = json_object_get_value(root_object, "data");
+
+	json_object_set_value(json_object(value_data), "users", json_value_init_array());
+	JSON_Array *users = json_object_get_array(json_object(value_data), "users");
+	get_user_list(0, users);
+
+	json_object_set_value(json_object(value_data), "rooms", json_value_init_array());
+	JSON_Array *rooms = json_object_get_array(json_object(value_data), "rooms");
+	get_room_list(rooms);
+
+
+	char response[MAX_LENGTH];
+	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+
+	json_value_free(root_value);
 }
