@@ -107,6 +107,7 @@ int main() {
 void init_variables() {
 	user_table = kh_init(pk_int);
 	connected_user_table = kh_init(str);
+	game_room_table = kh_init(pk_room);
 }
 
 void load_data() {
@@ -281,6 +282,8 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target) {
 }
 
 void route_create_room(JSON_Object *json, key_t mq_key, long target) {
+	printf("(main) route_create_room\n");
+
 	// validate user
 	const char* access_token = json_object_get_string(json, "access_token");
 	khint_t k = kh_get(str, connected_user_table, access_token);

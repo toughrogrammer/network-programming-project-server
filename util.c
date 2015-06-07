@@ -75,7 +75,7 @@ int send_message_to_queue(key_t mq_key, long from, long to, const char* message)
 	msg.from = from;
 	strcpy(msg.buffer, message);
 
-	return msgsnd(mq_key, (void *)&msg, sizeof(struct message_buffer), 0);
+	return msgsnd(mq_key, (void *)&msg, sizeof(struct message_buffer), IPC_NOWAIT);
 }
 
 int check_message_queue(key_t mq_key, int id, struct message_buffer* msg) {
