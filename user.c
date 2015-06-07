@@ -1,4 +1,5 @@
 #include "user.h"
+#include "constants.h"
 
 
 struct user_data* find_user_data(const char* id, const char* password) {
@@ -47,6 +48,19 @@ char* find_user_id_by_access_token(const char* access_token) {
 	return userdata->id;
 }
 
+void get_user_info_by_pk(int pk, JSON_Object *user_info){
+	for (khint_t k = kh_begin(user_table); k != kh_end(user_table); ++k) {
+		if (kh_exist(user_table, k)) {
+			struct user_data* userdata = kh_value(user_table, k);
+			if( userdata->pk == pk ) {
+				json_object_set_string(user_info, "id", userdata->id);
+				json_object_set_number(user_info, "character_type", userdata->character_type);
+				json_object_set_number(user_info, "level", userdata->level);
+			}
+		}
+	}
+}
+
 void print_users_status() {
 	printf("--users--\n");
 	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
@@ -59,8 +73,20 @@ void print_users_status() {
 }
 
 void get_user_list(int location, JSON_Array *arr) {
-	if( location == 0 ) {
+	JSON_Value *user_info = json_value_init_object();
+	JSON_Object *user_object = json_value_get_object(user_info);
+	if( location == USER_STATUS_LOBBY ) {
 		// lobby users
+		for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
+			if (kh_exist(connected_user_table, k)) {
+				struct connected_user* userdata = kh_value(connected_user_table, k);
+				if( userdata->status == USER_STATUS_LOBBY ) {
+					//JSON Object에 ID, type, level넣어서 배열에 추가.
+					get_user_info_by_pk(userdata->pk, user_object);
+					json_array_append_value(arr, user_info);
+				}
+			}
+		}
 	} else {
 		// room users
 	}
