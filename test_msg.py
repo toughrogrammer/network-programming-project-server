@@ -22,24 +22,22 @@ except Exception as e:
 
 sock_client.send('%s\r\n' % (json.dumps({
 	'target': 1, 
-	'id': 'testuser2',
-	'password': 'testuser2'
+	'id': 'testuser3',
+	'password': 'testuser3'
 })))
 
-time.sleep(1)
 data = sock_client.recv(MAX_LENGTH)
 print 'response : %s' % data
+
+time.sleep(3)
 
 sock_client.send('%s\r\n' % (json.dumps({
 	'target': 2, 
-	'access_token': 'testuser2',
+	'access_token': 'user0',
 	'message': 'Hello world!'
 })))
-
-time.sleep(1)
 data = sock_client.recv(MAX_LENGTH)
-print 'response : %s' % data
-
+print 'message : %s' % data
 
 sock_client.send('%s\r\n' % (json.dumps({
 	'target': 9, 

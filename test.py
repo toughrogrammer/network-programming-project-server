@@ -20,16 +20,21 @@ except Exception as e:
 	sys.exit()
 
 
-sock_client.send('%s\r\n%s\r\n' % (json.dumps({
+sock_client.send('%s\r\n' % (json.dumps({
 	'target': 1, 
 	'id': 'testuser2',
 	'password': 'testuser2'
-}),
-json.dumps({
-	'target': 9, 
-	'access_token': 'user0'
 })))
 
-time.sleep(1)
 data = sock_client.recv(MAX_LENGTH)
+time.sleep(1)
 print 'response : %s' % data
+
+time.sleep(3)
+data = sock_client.recv(MAX_LENGTH)
+print 'message : %s' % data
+
+sock_client.send('%s\r\n' % (json.dumps({
+	'target': 9,
+	'access_token':'user0'
+	})))
