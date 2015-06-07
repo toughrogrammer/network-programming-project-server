@@ -93,7 +93,7 @@ int main() {
 		long diff = curr - prev;
 		prev = curr;
 
-		update_game_rooms(diff);
+		update_game_rooms(msg_queue_key_id, diff);
 	}
 
 
