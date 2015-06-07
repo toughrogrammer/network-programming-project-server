@@ -53,7 +53,7 @@ void handle_game_room_showing_total_result(key_t mq_key, struct game_room* room)
 
 void notify_game_start(key_t mq_key, struct game_room* room) {
 	char response[MAX_LENGTH];
-	build_simple_response(response, REUSLT_OK_GAME_START);
+	build_simple_response(response, RESULT_OK_GAME_START);
 
 	for( int i = 0; i < room->num_of_users; i ++ ) {
 		int user_pk = room->member_pk_list[i];
@@ -134,4 +134,22 @@ int join_game_room(long pk_room, long pk_user) {
 	room->num_of_users++;
 
 	return 0;
+}
+
+void request_room_update(key_t mq_key, long pk_room) {
+	struct game_room* room = find_game_room_by_pk(pk_room);
+	if( room == NULL ) {
+		return;
+	}
+
+	char response[MAX_LENGTH];
+	build_simple_response(response, RESULT_OK_REQUEST_ROOM_MEMBER_UPDATE);
+
+	for( int i = 0; i < room->num_of_users; i ++ ) {
+		long pk_user = room->member_pk_list[i];
+		struct connected_user* user = find_connected_user_by_pk(pk_user);
+		if( user != NULL ) {
+			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, user->mq_id, response);
+		}
+	}
 }
