@@ -78,3 +78,31 @@ void notify_round_end(key_t mq_key, struct game_room* room) {
 		}
 	}
 }
+
+long create_game_room(const char* title) {
+	struct game_room* new_game_room = (struct game_room*)malloc(sizeof(struct game_room));
+	memset(new_game_room, 0, sizeof(struct game_room));
+
+	new_game_room->pk_room = next_pk_room++;
+	new_game_room->capacity = MAX_GAME_ROOM_CAPACITY;
+	strcpy(new_game_room->title, title);
+	new_game_room->status = GAME_ROOM_STATUS_READY;
+	new_game_room->total_round = MAX_GAME_ROUND;
+
+	int ret;
+	khint_t k = kh_put(pk_room, game_room_table, new_game_room->pk_room, &ret);
+	kh_value(game_room_table, k) = new_game_room;
+
+	return new_game_room->pk_room;
+}
+
+int remove_game_room(long pk) {
+	khint_t k = kh_get(pk_room, game_room_table, pk);
+	if( k == kh_end(game_room_table) ) {
+		return -1;
+	}
+	free(kh_value(game_room_table, k));
+	kh_del(pk_room, game_room_table, k);
+
+	return 0;
+}

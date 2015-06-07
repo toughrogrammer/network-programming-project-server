@@ -21,6 +21,7 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target);
 void route_sign_out(JSON_Object *json, key_t mq_key, long target);
 void route_check_lobby(JSON_Object *json, key_t mq_key, long target);
 void route_chatting(JSON_Object *json, key_t mq_key, long target);
+void route_create_room(JSON_Object *json, key_t mq_key, long target);
 
 int main_server_quit;
 
@@ -83,6 +84,9 @@ int main() {
 				break;
 			case MSG_TARGET_CHECK_LOBBY:
 				route_check_lobby(json_body, msg_queue_key_id, received.from);
+				break;
+			case MSG_TARGET_CREATE_ROOM:
+				route_create_room(json_body, msg_queue_key_id, received.from);
 				break;
 			}
 
@@ -274,4 +278,35 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target) {
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
 	json_value_free(root_value);
+}
+
+void route_create_room(JSON_Object *json, key_t mq_key, long target) {
+	// validate user
+	const char* access_token = json_object_get_string(json, "access_token");
+	khint_t k = kh_get(str, connected_user_table, access_token);
+	if( k == kh_end(connected_user_table) ) {
+		char response[MAX_LENGTH];
+		build_simple_response(response, RESULT_ERROR_INVALID_CONNECTION);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		return;
+	}
+
+	const char* title = json_object_get_string(json, "title");
+	long pk_room = create_game_room(title);
+
+
+	JSON_Value *root_value = json_value_init_object();
+	JSON_Object *root_object = json_value_get_object(root_value);
+	json_object_set_number(root_object, "result", REUSLT_OK_CREATE_ROOM);
+	json_object_set_number(root_object, "room_id", pk_room);
+
+	char response[MAX_LENGTH];
+	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	json_value_free(root_value);
+
+	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+
+	// TODO : broadcasting to users in lobby
+
+	// TODO : the user who creates room must be joined to created room immediately
 }
