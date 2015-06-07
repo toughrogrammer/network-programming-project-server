@@ -93,7 +93,7 @@ int main() {
 		long diff = curr - prev;
 		prev = curr;
 
-		update_game_rooms(diff, game_room_table);
+		update_game_rooms(diff);
 	}
 
 
