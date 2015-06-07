@@ -105,3 +105,12 @@ long get_time_in_millisec() {
 	gettimeofday(&tv, NULL);
 	return (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000;
 }
+
+int validate_user(const char* access_token) {
+	khint_t k = kh_get(str, connected_user_table, access_token);
+	if( k == kh_end(connected_user_table) ) {
+		return -1;
+	}
+
+	return 0;
+}

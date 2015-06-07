@@ -106,3 +106,32 @@ int remove_game_room(long pk) {
 
 	return 0;
 }
+
+struct game_room* find_game_room_by_pk(long pk) {
+	khint_t k = kh_get(pk_room, game_room_table, pk);
+	if( k == kh_end(game_room_table) ) {
+		return NULL;
+	}
+
+	return kh_value(game_room_table, k);
+}
+
+int join_game_room(long pk_room, long pk_user) {
+	struct game_room* room = find_game_room_by_pk(pk_room);
+	if( room == NULL ) {
+		return -1;
+	}
+
+	if( room->num_of_users == room->capacity ) {
+		return -2;
+	}
+
+	if( room->status != GAME_ROOM_STATUS_READY ) {
+		return -3;
+	}
+
+	room->member_pk_list[room->num_of_users] = pk_user;
+	room->num_of_users++;
+
+	return 0;
+}

@@ -22,6 +22,7 @@ void route_sign_out(JSON_Object *json, key_t mq_key, long target);
 void route_check_lobby(JSON_Object *json, key_t mq_key, long target);
 void route_chatting(JSON_Object *json, key_t mq_key, long target);
 void route_create_room(JSON_Object *json, key_t mq_key, long target);
+void route_join_room(JSON_Object *json, key_t mq_key, long target);
 
 int main_server_quit;
 
@@ -60,6 +61,8 @@ int main() {
 	while(! main_server_quit) {
 		struct message_buffer received;
 		if (msgrcv( msg_queue_key_id, (void *)&received, sizeof(struct message_buffer), MQ_ID_MAIN_SERVER, IPC_NOWAIT) != -1) {
+			printf("(main) msgrcv : %s", received.buffer);
+
 			JSON_Value *json_value = json_parse_string(received.buffer);
 			if( json_value == NULL ) {
 				// failed to parsing message
@@ -87,6 +90,9 @@ int main() {
 				break;
 			case MSG_TARGET_CREATE_ROOM:
 				route_create_room(json_body, msg_queue_key_id, received.from);
+				break;
+			case MSG_TARGET_JOIN_ROOM:
+				route_join_room(json_body, msg_queue_key_id, received.from);
 				break;
 			}
 
@@ -192,6 +198,7 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 void route_sign_out(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_sign_out\n");
 
+	// validate user
 	const char* access_token = json_object_get_string(json, "access_token");
 	khint_t k = kh_get(str, connected_user_table, access_token);
 	if( k == kh_end(connected_user_table) ) {
@@ -286,8 +293,7 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 
 	// validate user
 	const char* access_token = json_object_get_string(json, "access_token");
-	khint_t k = kh_get(str, connected_user_table, access_token);
-	if( k == kh_end(connected_user_table) ) {
+	if( validate_user(access_token) != 0 ) {
 		char response[MAX_LENGTH];
 		build_simple_response(response, RESULT_ERROR_INVALID_CONNECTION);
 		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
@@ -312,4 +318,33 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 	// TODO : broadcasting to users in lobby
 
 	// TODO : the user who creates room must be joined to created room immediately
+}
+
+void route_join_room(JSON_Object *json, key_t mq_key, long target) {
+	printf("(main) route_join_room\n");
+
+	// validate user
+	const char* access_token = json_object_get_string(json, "access_token");
+	if( validate_user(access_token) != 0 ) {
+		char response[MAX_LENGTH];
+		build_simple_response(response, RESULT_ERROR_INVALID_CONNECTION);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		return;
+	}
+
+	struct connected_user* user = find_connected_user_by_access_token(access_token);
+
+	long pk_room = json_object_get_number(json, "room_id");
+	int result = join_game_room(pk_room, user->pk);
+	if( result < 0 ) {
+		// failed to join game room for many reasons
+	}
+
+	char response[MAX_LENGTH];
+	build_simple_response(response, REUSLT_OK_JOIN_ROOM);
+	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+
+	// TODO : broadcasting to users in lobby
+
+	// TODO : broadcasting to users in that room
 }

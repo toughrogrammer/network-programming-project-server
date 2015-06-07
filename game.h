@@ -17,6 +17,7 @@ void notify_game_start(key_t mq_key, struct game_room* room);
 void notify_round_end(key_t mq_key, struct game_room* room);
 long create_game_room(const char* title);
 int remove_game_room(long pk);
+int join_game_room(long pk_room, long pk_user);
 
 static long next_pk_room = 1;
 
