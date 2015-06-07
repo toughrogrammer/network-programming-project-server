@@ -214,7 +214,7 @@ void route_sign_out(JSON_Object *json, key_t mq_key, long target) {
 	print_users_status();
 
 	char response[MAX_LENGTH];
-	build_simple_response(response, REUSLT_OK_REQUEST_LOBBY_UPDATE);
+	build_simple_response(response, RESULT_OK_REQUEST_LOBBY_UPDATE);
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 	printf("(main) send_message_to_queue\n");
 }
@@ -267,7 +267,7 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target) {
 
 	JSON_Value *root_value = json_value_init_object();
 	JSON_Object *root_object = json_value_get_object(root_value);
-	json_object_set_number(root_object, "result", REUSLT_OK_STATE_LOBBY);
+	json_object_set_number(root_object, "result", RESULT_OK_STATE_LOBBY);
 
 	json_object_set_value(root_object, "data", json_value_init_object());
 	JSON_Value *value_data = json_object_get_value(root_object, "data");
@@ -306,7 +306,7 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 
 	JSON_Value *root_value = json_value_init_object();
 	JSON_Object *root_object = json_value_get_object(root_value);
-	json_object_set_number(root_object, "result", REUSLT_OK_CREATE_ROOM);
+	json_object_set_number(root_object, "result", RESULT_OK_CREATE_ROOM);
 	json_object_set_number(root_object, "room_id", pk_room);
 
 	char response[MAX_LENGTH];
@@ -345,7 +345,7 @@ void route_join_room(JSON_Object *json, key_t mq_key, long target) {
 	}
 
 	char response[MAX_LENGTH];
-	build_simple_response(response, REUSLT_OK_JOIN_ROOM);
+	build_simple_response(response, RESULT_OK_JOIN_ROOM);
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
 	// TODO : broadcasting to users in lobby

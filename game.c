@@ -53,7 +53,7 @@ void handle_game_room_showing_total_result(key_t mq_key, struct game_room* room)
 
 void notify_game_start(key_t mq_key, struct game_room* room) {
 	char response[MAX_LENGTH];
-	build_simple_response(response, REUSLT_OK_GAME_START);
+	build_simple_response(response, RESULT_OK_GAME_START);
 
 	for( int i = 0; i < room->num_of_users; i ++ ) {
 		int user_pk = room->member_pk_list[i];
