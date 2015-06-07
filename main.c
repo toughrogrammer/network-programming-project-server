@@ -317,7 +317,8 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 
 	// TODO : broadcasting to users in lobby
 
-	// TODO : the user who creates room must be joined to created room immediately
+	struct connected_user* user = find_connected_user_by_access_token(access_token);
+	join_game_room(pk_room, user->pk);
 }
 
 void route_join_room(JSON_Object *json, key_t mq_key, long target) {
@@ -347,4 +348,5 @@ void route_join_room(JSON_Object *json, key_t mq_key, long target) {
 	// TODO : broadcasting to users in lobby
 
 	// TODO : broadcasting to users in that room
+	request_room_update(mq_key, pk_room);
 }

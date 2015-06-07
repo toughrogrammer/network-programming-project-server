@@ -17,79 +17,84 @@ def until_crlf(line):
 
 
 def client1():
-	sock_client = socket(AF_INET, SOCK_STREAM)
+	sock_client1 = socket(AF_INET, SOCK_STREAM)
 	try:
-		sock_client.connect(ADDR)
+		sock_client1.connect(ADDR)
 	except Exception as e:
 		print e
 		sys.exit()
 
-	print sock_client
+	print sock_client1
 
 
-	sock_client.send('%s\r\n' % (json.dumps({
+	sock_client1.send('%s\r\n' % (json.dumps({
 		'target': 1, 
 		'id': 'testuser2',
 		'password': 'testuser2'
 	})))
 
 	# time.sleep(2)
-	data = sock_client.recv(MAX_LENGTH)
+	data = sock_client1.recv(MAX_LENGTH)
 	print '(client1) response : %s' % data
 
 	decoded = json.loads(data)
 	access_token = decoded['access_token']
 
 
-	sock_client.send('%s\r\n' % (json.dumps({
+	sock_client1.send('%s\r\n' % (json.dumps({
 		'target': 3, 
 		'access_token': access_token,
 		'title': 'hello world!'
 	})))
 
 	# time.sleep(2)
-	data = sock_client.recv(MAX_LENGTH)
-	print '(client1) response : %s' % data
+	while True:
+		time.sleep(1)
+		data = sock_client1.recv(MAX_LENGTH)
+		if data:
+			print '(client1) response : %s' % data
 
 
 def client2():
 	# waiting for creating game room
 	time.sleep(2)
 
-	sock_client = socket(AF_INET, SOCK_STREAM)
+	sock_client2 = socket(AF_INET, SOCK_STREAM)
 	try:
-		sock_client.connect(ADDR)
+		sock_client2.connect(ADDR)
 	except Exception as e:
 		print e
 		sys.exit()
 
-	print sock_client
+	print sock_client2
 
 
-	sock_client.send('%s\r\n' % (json.dumps({
+	sock_client2.send('%s\r\n' % (json.dumps({
 		'target': 1, 
 		'id': 'testuser3',
 		'password': 'testuser3'
 	})))
 
 	# time.sleep(2)
-	data = sock_client.recv(MAX_LENGTH)
+	data = sock_client2.recv(MAX_LENGTH)
 	print '(client2) response : %s' % data
 
 	decoded = json.loads(data)
 	access_token = decoded['access_token']
 
 
-	sock_client.send('%s\r\n' % (json.dumps({
+	sock_client2.send('%s\r\n' % (json.dumps({
 		'target': 4, 
 		'access_token': access_token,
 		'room_id': 1
 	})))
 
 	# time.sleep(2)
-	data = sock_client.recv(MAX_LENGTH)
-	print '(client2) response : %s' % data
-
+	while True:
+		time.sleep(1)
+		data = sock_client2.recv(MAX_LENGTH)
+		if data:
+			print '(client2) response : %s' % data
 
 
 try:
