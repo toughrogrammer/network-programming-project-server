@@ -316,6 +316,9 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
 	// TODO : broadcasting to users in lobby
+	/*
+	// write codes here
+	*/
 
 	struct connected_user* user = find_connected_user_by_access_token(access_token);
 	join_game_room(pk_room, user->pk);
@@ -346,7 +349,9 @@ void route_join_room(JSON_Object *json, key_t mq_key, long target) {
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
 	// TODO : broadcasting to users in lobby
+	/*
+	// write codes here
+	*/
 
-	// TODO : broadcasting to users in that room
 	request_room_update(mq_key, pk_room);
 }
