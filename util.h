@@ -25,5 +25,6 @@ int send_message_to_queue(key_t mq_key, long from, long to, const char* message)
 int check_message_queue(key_t mq_key, int id, struct message_buffer* msg);
 void fill_connected_user(struct connected_user* user, int pk, int mq_id, int status, const char* access_token);
 void build_simple_response(char* dest, int code);
+long get_time_in_millisec();
 
 #endif

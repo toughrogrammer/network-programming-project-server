@@ -1,5 +1,6 @@
 #include "util.h"
 #include "library/parson/parson.h"
+#include <sys/time.h>
 
 
 void clear_recv_buffer(int sock_client) {
@@ -97,4 +98,10 @@ void build_simple_response(char* dest, int code) {
 	sprintf(dest, "%s\r\n", json_serialize_to_string(root_value));
 	
 	json_value_free(root_value);
+}
+
+long get_time_in_millisec() {
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000;
 }

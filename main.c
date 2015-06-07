@@ -3,24 +3,19 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <errno.h>
 #include "library/parson/parson.h"
 #include "library/klib/khash.h"
 #include "constants.h"
 #include "data_structure.h"
 #include "listening.h"
 #include "util.h"
-#include <errno.h>
+#include "user.h"
+#include "game.h"
 
 
 void init_variables();
 void load_data();
-void print_users_status();
-struct user_data* find_user_data(const char* id, const char* password);
-struct connected_user* find_connected_user_by_access_token(const char* access_token);
-struct connected_user* find_connected_user_by_pk(int pk);
-char* find_user_id_by_access_token(const char* access_token);
-void get_user_list(int location, JSON_Array *arr);
-void get_room_list(JSON_Array *arr);
 void route_sign_up(JSON_Object *json, key_t mq_key, long target);
 void route_sign_in(JSON_Object *json, key_t mq_key, long target);
 void route_sign_out(JSON_Object *json, key_t mq_key, long target);
@@ -28,9 +23,6 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target);
 void route_chatting(JSON_Object *json, key_t mq_key, long target);
 
 int main_server_quit;
-
-khash_t(pk_int) *user_table;
-khash_t(str) *connected_user_table;
 
 
 int main() {
@@ -60,6 +52,9 @@ int main() {
 
 	init_variables();
 	load_data();
+
+	long curr = get_time_in_millisec();
+	long prev = curr;
 
 	while(! main_server_quit) {
 		struct message_buffer received;
@@ -93,6 +88,12 @@ int main() {
 
 			json_value_free(json_value);
 		}
+
+		curr = get_time_in_millisec();
+		long diff = curr - prev;
+		prev = curr;
+
+		update_game_rooms(diff, game_room_table);
 	}
 
 
@@ -118,75 +119,6 @@ void load_data() {
 		k = kh_put(pk_int, user_table, i, &ret);
 		kh_value(user_table, k) = new_user_data;
 	}
-}
-
-void print_users_status() {
-	printf("--users--\n");
-	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
-		if (kh_exist(connected_user_table, k)) {
-			struct connected_user* user = kh_value(connected_user_table, k);
-			printf("%d %d %d %s\n", (int)user->mq_id, (int)user->pk, (int)user->status, user->access_token);
-		}
-	}
-	printf("---------\n");
-}
-
-struct user_data* find_user_data(const char* id, const char* password) {
-	for (khint_t k = kh_begin(user_table); k != kh_end(user_table); ++k) {
-		if (kh_exist(user_table, k)) {
-			struct user_data* userdata = kh_value(user_table, k);
-			if( strcmp(userdata->id, id) == 0 && strcmp(userdata->password, password) == 0 ) {
-				return userdata;
-			}
-		}
-	}
-
-	// not found
-	return NULL;
-}
-
-struct connected_user* find_connected_user_by_access_token(const char* access_token) {
-	khint_t k = kh_get(str, connected_user_table, access_token);
-	if( k == kh_end(connected_user_table) ) {
-		return NULL;
-	}
-
-	return kh_value(connected_user_table, k);
-}
-
-struct connected_user* find_connected_user_by_pk(int pk) {
-	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
-		if (kh_exist(connected_user_table, k)) {
-			struct connected_user* userdata = kh_value(connected_user_table, k);
-			if( userdata->pk == pk ) {
-				return userdata;
-			}
-		}
-	}
-
-	return NULL;
-}
-
-char* find_user_id_by_access_token(const char* access_token) {
-	khint_t k = kh_get(str, connected_user_table, access_token);
-	if( k == kh_end(connected_user_table) ) {
-		return NULL;
-	}
-	struct user_data* userdata = kh_value(user_table, k);
-
-	return userdata->id;
-}
-
-void get_user_list(int location, JSON_Array *arr) {
-	if( location == 0 ) {
-		// lobby users
-	} else {
-		// room users
-	}
-}
-
-void get_room_list(JSON_Array *arr) {
-
 }
 
 void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
