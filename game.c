@@ -16,6 +16,21 @@ struct game_room* find_game_room_by_pk(long pk) {
 	return kh_value(game_room_table, k);
 }
 
+void print_game_rooms_status() {
+	printf("--game rooms--\n");
+	for (khint_t k = kh_begin(game_room_table); k != kh_end(game_room_table); ++k) {
+		if (kh_exist(game_room_table, k)) {
+			struct game_room* room = kh_value(game_room_table, k);
+			printf("%ld\t%ld\t%ld/%ld\t%s\t%ld/%ld\n", room->pk_room, 
+				room->status,
+				room->num_of_users, room->capacity,
+				room->title,
+				room->curr_round, room->total_round);
+		}
+	}
+	printf("--------------\n");
+}
+
 void update_game_rooms(key_t mq_key, long dt) {
 	for (khint_t k = kh_begin(game_room_table); k != kh_end(game_room_table); ++k) {
 		if (kh_exist(game_room_table, k)) {
@@ -83,7 +98,7 @@ void handle_game_room_showing_total_result(key_t mq_key, struct game_room* room)
 	if( room->timer > MAX_ROUND_TIMER_SHOW_TOTAL_RESULT ) {
 		room->timer = 0;
 
-		room->status = GAME_ROOM_STATUS_WAITING;
+		end_game(room->pk_room);
 		notify_game_end(mq_key, room);
 	}
 }
@@ -102,7 +117,22 @@ void notify_game_start(key_t mq_key, struct game_room* room) {
 }
 
 void notify_round_start(key_t mq_key, struct game_room* room) {
-	// 라운드 시작하면서 퀴즈 문제도 알려줘야함.
+	JSON_Value *root_value = json_value_init_object();
+	JSON_Object *root_object = json_value_get_object(root_value);
+	json_object_set_number(root_object, "result", RESULT_OK_MAKE_QUIZ);
+	json_object_set_string(root_object, "quiz_string", "lorem ipsum");
+
+	char response[MAX_LENGTH];
+	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	json_value_free(root_value);
+
+	for( int i = 0; i < room->num_of_users; i ++ ) {
+		int user_pk = room->member_pk_list[i];
+		struct connected_user *user = find_connected_user_by_pk(user_pk);
+		if( user != NULL ) {
+			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, user->mq_id, response);
+		}
+	}
 }
 
 void notify_round_end(key_t mq_key, struct game_room* room) {
@@ -236,6 +266,21 @@ int start_game(long pk_room) {
 		room->winner_of_round[i] = 0;
 	}
 	strcpy(room->problem, "");
+
+	print_game_rooms_status();
+
+	return 0;
+}
+
+int end_game(long pk_room) {
+	struct game_room* room = find_game_room_by_pk(pk_room);
+	if( room == NULL ) {
+		return -1;
+	}
+
+	room->status = GAME_ROOM_STATUS_WAITING;
+
+	print_game_rooms_status();
 
 	return 0;
 }
