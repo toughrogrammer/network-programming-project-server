@@ -232,8 +232,12 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 
 	JSON_Value *root_value = json_value_init_object();
 	JSON_Object *root_object = json_value_get_object(root_value);
-	json_object_set_string(root_object, "id", sender_id);
-	json_object_set_string(root_object, "message", message);
+	json_object_set_number(root_object, "result", RESULT_OK_CHATTING);
+	json_object_set_value(root_object, "message", json_value_init_object());
+	JSON_Value *value_data = json_object_get_value(root_object, "message");
+
+	json_object_set_string(json_object(value_data), "sender_id", sender_id);
+	json_object_set_string(json_object(value_data), "content", message);
 
 	char response[MAX_LENGTH];
 	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
