@@ -43,7 +43,6 @@ def client1():
 	access_token = decoded['access_token']
 
 	while True:
-		print '(client1) loop %s' % access_token
 		time.sleep(2)
 
 		sock_client1.send('%s\r\n' % (json.dumps({
@@ -51,9 +50,9 @@ def client1():
 			'access_token': access_token,
 			'message': 'hello world!'
 		})))
+		print '(client1) chaaaaaaaat!'
 
 		data = sock_client1.recv(MAX_LENGTH)
-		print 'recv end'
 		if data:
 			print '(client1) response : %s' % data
 
@@ -75,10 +74,8 @@ def client2():
 	})))
 
 	while True:
-		print '(client2) loop'
 		time.sleep(1)
 		data = sock_client2.recv(MAX_LENGTH)
-		print 'recv end'
 		if data:
 			print '(client2) response : %s' % data
 
