@@ -72,22 +72,34 @@ void print_users_status() {
 	printf("---------\n");
 }
 
-void get_user_list(int location, JSON_Array *arr) {
+void get_lobby_user_list(JSON_Array *arr) {
 	JSON_Value *user_info = json_value_init_object();
 	JSON_Object *user_object = json_value_get_object(user_info);
-	if( location == USER_STATUS_LOBBY ) {
-		// lobby users
-		for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
-			if (kh_exist(connected_user_table, k)) {
-				struct connected_user* userdata = kh_value(connected_user_table, k);
-				if( userdata->status == USER_STATUS_LOBBY ) {
-					//JSON Object에 ID, type, level넣어서 배열에 추가.
-					get_user_info_by_pk(userdata->pk, user_object);
-					json_array_append_value(arr, user_info);
-				}
+	// lobby users
+	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
+		if (kh_exist(connected_user_table, k)) {
+			struct connected_user* userdata = kh_value(connected_user_table, k);
+			if( userdata->status == USER_STATUS_LOBBY ) {
+				//JSON Object에 ID, type, level넣어서 배열에 추가.
+				get_user_info_by_pk(userdata->pk, user_object);
+				json_array_append_value(arr, user_info);
 			}
 		}
-	} else {
-		// room users
 	}
 }
+
+void get_room_user_list(int room_id, JSON_Array *arr){
+	JSON_Value *user_info = json_value_init_object();
+	JSON_Object *user_object = json_value_get_object(user_info);
+	//room users
+	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
+		if (kh_exist(connected_user_table, k)) {
+			struct connected_user* userdata = kh_value(connected_user_table, k);
+			if( userdata->room_id == room_id ) {
+				//JSON Object에 ID, type, level넣어서 배열에 추가.
+				get_user_info_by_pk(userdata->pk, user_object);
+				json_array_append_value(arr, user_info);
+			}
+		}
+	}
+}	
