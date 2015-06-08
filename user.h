@@ -6,6 +6,7 @@
 #include "library/parson/parson.h"
 
 struct user_data* find_user_data(const char* id, const char* password);
+struct user_data* find_user_data_by_pk(long pk);
 struct connected_user* find_connected_user_by_access_token(const char* access_token);
 struct connected_user* find_connected_user_by_pk(int pk);
 char* find_user_id_by_access_token(const char* access_token);

@@ -14,6 +14,9 @@ void update_game_rooms(key_t mq_key, long dt) {
 			room->timer += dt;
 
 			switch(room->status) {
+			case GAME_ROOM_STATUS_WAITING:
+				handle_game_room_waiting(mq_key, room);
+				break;
 			case GAME_ROOM_STATUS_READY:
 				handle_game_room_ready(mq_key, room);
 				break;
@@ -31,24 +34,50 @@ void update_game_rooms(key_t mq_key, long dt) {
 	}
 }
 
-void handle_game_room_ready(key_t mq_key, struct game_room* room) {
+void handle_game_room_waiting(key_t mq_key, struct game_room* room) {
 
 }
 
-void handle_game_room_playing(key_t mq_key, struct game_room* room) {
-	if( room->timer > MAX_ROUND_TIMER ) {
+void handle_game_room_ready(key_t mq_key, struct game_room* room) {
+	if( room->timer > MAX_ROUND_TIMER_READY ) {
 		room->timer = 0;
 
-		notify_round_end(mq_key, room);
+		room->status = GAME_ROOM_STATUS_PLAYING;
+		notify_round_start(mq_key, room);
+	}
+}
+
+void handle_game_room_playing(key_t mq_key, struct game_room* room) {
+	if( room->timer > MAX_ROUND_TIMER_SUBMIT ) {
+		room->timer = 0;
+
+		room->curr_round++;
+		if( room->curr_round == room->total_round ) {
+			room->curr_round = 0;
+			room->status = GAME_ROOM_STATUS_SHOWING_TOTAL_RESULT;
+		} else {
+			room->status = GAME_ROOM_STATUS_SHOWING_ROUND_RESULT;
+			notify_round_end(mq_key, room);
+		}
 	}
 }
 
 void handle_game_room_showing_round_result(key_t mq_key, struct game_room* room) {
+	if( room->timer > MAX_ROUND_TIMER_SHOW_ROUND_RESULT ) {
+		room->timer = 0;
 
+		room->status = GAME_ROOM_STATUS_PLAYING;
+		notify_round_start(mq_key, room);
+	}
 }
 
 void handle_game_room_showing_total_result(key_t mq_key, struct game_room* room) {
+	if( room->timer > MAX_ROUND_TIMER_SHOW_TOTAL_RESULT ) {
+		room->timer = 0;
 
+		room->status = GAME_ROOM_STATUS_WAITING;
+		notify_game_end(mq_key, room);
+	}
 }
 
 void notify_game_start(key_t mq_key, struct game_room* room) {
@@ -64,11 +93,67 @@ void notify_game_start(key_t mq_key, struct game_room* room) {
 	}
 }
 
+void notify_round_start(key_t mq_key, struct game_room* room) {
+	// 라운드 시작하면서 퀴즈 문제도 알려줘야함.
+}
+
 void notify_round_end(key_t mq_key, struct game_room* room) {
 	long winner_pk = room->winner_of_round[room->curr_round];
+	struct user_data* user = find_user_data_by_pk(winner_pk);
+
+	JSON_Value *root_value = json_value_init_object();
+	JSON_Object *root_object = json_value_get_object(root_value);
+	json_object_set_number(root_object, "result", RESULT_OK_ROUND_RESULT);
+	json_object_set_string(root_object, "winner_id", user->id);
+	json_object_set_number(root_object, "remain_round", room->total_round - room->curr_round);
 
 	char response[MAX_LENGTH];
-	sprintf(response, "%s\r\n", "");
+	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	json_value_free(root_value);
+
+	for( int i = 0; i < room->num_of_users; i ++ ) {
+		int user_pk = room->member_pk_list[i];
+		struct connected_user *user = find_connected_user_by_pk(user_pk);
+		if( user != NULL ) {
+			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, user->mq_id, response);
+		}
+	}
+}
+
+void notify_game_end(key_t mq_key, struct game_room* room) {
+	int win_count[MAX_GAME_ROOM_CAPACITY] = { 0, };
+	int total_winner = 0;
+	int max_win_round = -1;
+
+	for( int i = 0; i < room->total_round; i ++ ) {
+		for( int j = 0; j < room->num_of_users; j ++ ) {
+			if( room->member_pk_list[j] == room->winner_of_round[i] ) {
+				win_count[j]++;
+			}
+		}
+	}
+
+	for( int i = 0; i < room->num_of_users; i ++ ) {
+		if( win_count[i] > max_win_round ) {
+			max_win_round = win_count[i];
+			total_winner = room->member_pk_list[i];
+		}
+	}
+
+	struct user_data* userdata = find_user_data_by_pk(total_winner);
+	if( userdata == NULL )  {
+		// error
+		return;
+	}
+
+	JSON_Value *root_value = json_value_init_object();
+	JSON_Object *root_object = json_value_get_object(root_value);
+	json_object_set_number(root_object, "result", RESULT_OK_TOTAL_RESULT);
+	json_object_set_string(root_object, "winner_id", userdata->id);
+
+	char response[MAX_LENGTH];
+	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	json_value_free(root_value);
 
 	for( int i = 0; i < room->num_of_users; i ++ ) {
 		int user_pk = room->member_pk_list[i];
@@ -86,7 +171,7 @@ long create_game_room(const char* title) {
 	new_game_room->pk_room = next_pk_room++;
 	new_game_room->capacity = MAX_GAME_ROOM_CAPACITY;
 	strcpy(new_game_room->title, title);
-	new_game_room->status = GAME_ROOM_STATUS_READY;
+	new_game_room->status = GAME_ROOM_STATUS_WAITING;
 	new_game_room->total_round = MAX_GAME_ROUND;
 
 	int ret;

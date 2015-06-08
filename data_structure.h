@@ -10,7 +10,6 @@
 #define MAX_GAME_ROOM_CAPACITY 4
 #define MAX_GAME_ROUND 10
 #define MAX_LENGTH_PROBLEM_SENTENCE 128
-#define MAX_ROUND_TIMER 1
 
 
 struct message_buffer {
