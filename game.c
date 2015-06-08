@@ -133,6 +133,10 @@ int join_game_room(long pk_room, long pk_user) {
 	room->member_pk_list[room->num_of_users] = pk_user;
 	room->num_of_users++;
 
+	struct connected_user* user = find_connected_user_by_pk(pk_user);
+	user->status = USER_STATUS_IN_ROOM;
+	user->pk_room = pk_room;
+
 	return 0;
 }
 

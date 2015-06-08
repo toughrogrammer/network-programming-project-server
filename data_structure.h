@@ -31,6 +31,7 @@ struct connected_user {
 	long pk;
 	long mq_id;
 	long status;
+	long pk_room;
 	char access_token[MAX_LENGTH_ACCESS_TOKEN];
 };
 
