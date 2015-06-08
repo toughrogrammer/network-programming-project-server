@@ -23,6 +23,7 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target);
 void route_chatting(JSON_Object *json, key_t mq_key, long target);
 void route_create_room(JSON_Object *json, key_t mq_key, long target);
 void route_join_room(JSON_Object *json, key_t mq_key, long target);
+void route_game_start(JSON_Object *json, key_t mq_key, long target);
 void broadcast_lobby(key_t mq_key, char* message);
 void broadcast_room(key_t mq_key, char* message, int pk_room);
 
@@ -95,6 +96,9 @@ int main() {
 				break;
 			case MSG_TARGET_JOIN_ROOM:
 				route_join_room(json_body, msg_queue_key_id, received.from);
+				break;
+			case MSG_TARGET_GAME_START:
+				route_game_start(json_body, msg_queue_key_id, received.from);
 				break;
 			}
 
@@ -352,6 +356,41 @@ void route_join_room(JSON_Object *json, key_t mq_key, long target) {
 	broadcast_room(mq_key, response, pk_room);
 
 	request_room_update(mq_key, pk_room);
+}
+
+void route_game_start(JSON_Object *json, key_t mq_key, long target) {
+	printf("(main) route_game_start\n");
+
+	char response[MAX_LENGTH];
+
+	// validate user
+	const char* access_token = json_object_get_string(json, "access_token");
+	if( validate_user(access_token) != 0 ) {
+		build_simple_response(response, RESULT_ERROR_INVALID_CONNECTION);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		return;
+	}
+
+	struct connected_user* user = find_connected_user_by_access_token(access_token);
+	if( user->status != USER_STATUS_IN_ROOM ) {
+		// error
+		return;
+	}
+
+	if( start_game(user->pk_room) < 0 ) {
+		// error
+	} else {
+		build_simple_response(response, RESULT_OK_START_GAME);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+	}
+
+	struct game_room* room = find_game_room_by_pk(user->pk_room);
+	if( room == NULL ) {
+		// error
+		return;
+	}
+
+	notify_game_start(mq_key, room);
 }
 
 void broadcast_lobby(key_t mq_key, char* message){

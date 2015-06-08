@@ -7,6 +7,15 @@ void get_room_list(JSON_Array *arr) {
 
 }
 
+struct game_room* find_game_room_by_pk(long pk) {
+	khint_t k = kh_get(pk_room, game_room_table, pk);
+	if( k == kh_end(game_room_table) ) {
+		return NULL;
+	}
+
+	return kh_value(game_room_table, k);
+}
+
 void update_game_rooms(key_t mq_key, long dt) {
 	for (khint_t k = kh_begin(game_room_table); k != kh_end(game_room_table); ++k) {
 		if (kh_exist(game_room_table, k)) {
@@ -53,7 +62,6 @@ void handle_game_room_playing(key_t mq_key, struct game_room* room) {
 
 		room->curr_round++;
 		if( room->curr_round == room->total_round ) {
-			room->curr_round = 0;
 			room->status = GAME_ROOM_STATUS_SHOWING_TOTAL_RESULT;
 		} else {
 			room->status = GAME_ROOM_STATUS_SHOWING_ROUND_RESULT;
@@ -82,7 +90,7 @@ void handle_game_room_showing_total_result(key_t mq_key, struct game_room* room)
 
 void notify_game_start(key_t mq_key, struct game_room* room) {
 	char response[MAX_LENGTH];
-	build_simple_response(response, RESULT_OK_GAME_START);
+	build_simple_response(response, RESULT_OK_NOTIFYING_START_GAME);
 
 	for( int i = 0; i < room->num_of_users; i ++ ) {
 		int user_pk = room->member_pk_list[i];
@@ -192,15 +200,6 @@ int remove_game_room(long pk) {
 	return 0;
 }
 
-struct game_room* find_game_room_by_pk(long pk) {
-	khint_t k = kh_get(pk_room, game_room_table, pk);
-	if( k == kh_end(game_room_table) ) {
-		return NULL;
-	}
-
-	return kh_value(game_room_table, k);
-}
-
 int join_game_room(long pk_room, long pk_user) {
 	struct game_room* room = find_game_room_by_pk(pk_room);
 	if( room == NULL ) {
@@ -221,6 +220,22 @@ int join_game_room(long pk_room, long pk_user) {
 	struct connected_user* user = find_connected_user_by_pk(pk_user);
 	user->status = USER_STATUS_IN_ROOM;
 	user->pk_room = pk_room;
+
+	return 0;
+}
+
+int start_game(long pk_room) {
+	struct game_room* room = find_game_room_by_pk(pk_room);
+	if( room == NULL ) {
+		return -1;
+	}
+
+	room->status = GAME_ROOM_STATUS_READY;
+	room->curr_round = 0;
+	for( int i = 0; i < MAX_GAME_ROUND; i ++ ) {
+		room->winner_of_round[i] = 0;
+	}
+	strcpy(room->problem, "");
 
 	return 0;
 }

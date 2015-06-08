@@ -35,7 +35,7 @@ def client1():
 
 	# time.sleep(2)
 	data = sock_client1.recv(MAX_LENGTH)
-	print '(client1) response : %s' % data
+	print '(client1) response : %s' % data,
 
 	decoded = json.loads(data)
 	access_token = decoded['access_token']
@@ -47,12 +47,21 @@ def client1():
 		'title': 'hello world!'
 	})))
 
-	# time.sleep(2)
+	# data = sock_client1.recv(MAX_LENGTH)
+	# print '(client1) response : %s' % data,
+
+	sock_client1.send('%s\r\n' % (json.dumps({
+		'target': 6, 
+		'access_token': access_token
+	})))
+
+	data = sock_client1.recv(MAX_LENGTH)
+	print '(client1) response : %s' % data,
+
 	while True:
-		time.sleep(1)
 		data = sock_client1.recv(MAX_LENGTH)
 		if data:
-			print '(client1) response : %s' % data
+			print '(client1) response : %s' % data,
 
 
 def client2():
@@ -99,7 +108,7 @@ def client2():
 
 try:
 	thread.start_new_thread(client1, ())
-	thread.start_new_thread(client2, ())
+	# thread.start_new_thread(client2, ())
 except Exception as e:
 	print 'exception : %s' % e
 	pass
