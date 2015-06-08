@@ -109,7 +109,7 @@ void get_room_user_list(int room_id, JSON_Array *arr){
 	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
 		if (kh_exist(connected_user_table, k)) {
 			struct connected_user* userdata = kh_value(connected_user_table, k);
-			if( userdata->room_id == room_id ) {
+			if( userdata->pk_room == room_id ) {
 				//JSON Object에 ID, type, level넣어서 배열에 추가.
 				get_user_info_by_pk(userdata->pk, user_object);
 				json_array_append_value(arr, user_info);
