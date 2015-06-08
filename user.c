@@ -80,7 +80,7 @@ void print_users_status() {
 	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
 		if (kh_exist(connected_user_table, k)) {
 			struct connected_user* user = kh_value(connected_user_table, k);
-			printf("%d %d %d %s\n", (int)user->mq_id, (int)user->pk, (int)user->status, user->access_token);
+			printf("%d %d %d %s %d\n", (int)user->mq_id, (int)user->pk, (int)user->status, user->access_token, (int)user->pk_room);
 		}
 	}
 	printf("---------\n");

@@ -320,6 +320,8 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 
 	//broadcasting to users in lobby
 	broadcast_lobby(mq_key, response);
+
+	print_users_status();
 }
 
 void route_join_room(JSON_Object *json, key_t mq_key, long target) {

@@ -211,7 +211,7 @@ int join_game_room(long pk_room, long pk_user) {
 		return -2;
 	}
 
-	if( room->status != GAME_ROOM_STATUS_READY ) {
+	if( room->status != GAME_ROOM_STATUS_WAITING ) {
 		return -3;
 	}
 
