@@ -11,7 +11,8 @@ struct connected_user* find_connected_user_by_access_token(const char* access_to
 struct connected_user* find_connected_user_by_pk(int pk);
 char* find_user_id_by_access_token(const char* access_token);
 void print_users_status();
-void get_user_list(int location, JSON_Array *arr);
+void get_lobby_user_list(JSON_Array *arr);
+void get_room_user_list(int room_id, JSON_Array *arr);
 
 
 #endif

@@ -272,7 +272,7 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target) {
 
 	json_object_set_value(json_object(value_data), "users", json_value_init_array());
 	JSON_Array *users = json_object_get_array(json_object(value_data), "users");
-	get_user_list(0, users);
+	get_user_list(users);
 
 	json_object_set_value(json_object(value_data), "rooms", json_value_init_array());
 	JSON_Array *rooms = json_object_get_array(json_object(value_data), "rooms");
@@ -311,15 +311,13 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
 	json_value_free(root_value);
 
-	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-
-	// TODO : broadcasting to users in lobby
-	/*
-	// write codes here
-	*/
+	// send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
 	struct connected_user* user = find_connected_user_by_access_token(access_token);
 	join_game_room(pk_room, user->pk);
+
+	//broadcasting to users in lobby
+	broadcast_lobby(message);
 }
 
 void route_join_room(JSON_Object *json, key_t mq_key, long target) {
@@ -346,10 +344,34 @@ void route_join_room(JSON_Object *json, key_t mq_key, long target) {
 	build_simple_response(response, RESULT_OK_JOIN_ROOM);
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
-	// TODO : broadcasting to users in lobby
-	/*
-	// write codes here
-	*/
+	// broadcasting to users in lobby and room
+	broadcast_room(message, pk_room);
 
 	request_room_update(mq_key, pk_room);
+}
+
+void broadcast_lobby(char* message){
+	// lobby users
+	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
+		if (kh_exist(connected_user_table, k)) {
+			struct connected_user* userdata = kh_value(connected_user_table, k);
+			if( userdata->status == USER_STATUS_LOBBY ) {
+				//broadcasting
+				send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, userdata->mq_id, response);
+			}
+		}
+	}
+}
+
+void broadcast_room(char* message, int pk_room){
+// room users
+	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
+		if (kh_exist(connected_user_table, k)) {
+			struct connected_user* userdata = kh_value(connected_user_table, k);
+			if( userdata->room_id == pk_room ) {
+				//broadcasting
+				send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, userdata->mq_id, response);
+			}
+		}
+	}	
 }
