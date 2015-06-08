@@ -2,6 +2,7 @@ from socket import *
 import sys
 import json
 import time
+import thread
 
 
 HOST = '127.0.0.1'
@@ -20,28 +21,76 @@ except Exception as e:
 	sys.exit()
 
 
-sock_client.send('%s\r\n' % (json.dumps({
-	'target': 1, 
-	'id': 'testuser2',
-	'password': 'testuser2'
-})))
+def client1():
+	sock_client1 = socket(AF_INET, SOCK_STREAM)
+	try:
+		sock_client1.connect(ADDR)
+	except Exception as e:
+		print e
+		sys.exit()
 
-time.sleep(1)
-data = sock_client.recv(MAX_LENGTH)
-print 'response : %s' % data
-
-sock_client.send('%s\r\n' % (json.dumps({
-	'target': 2, 
-	'access_token': 'testuser2',
-	'message': 'Hello world!'
-})))
-
-time.sleep(1)
-data = sock_client.recv(MAX_LENGTH)
-print 'response : %s' % data
+	print sock_client1
 
 
-sock_client.send('%s\r\n' % (json.dumps({
-	'target': 9, 
-	'access_token': 'user0'
-})))
+	sock_client1.send('%s\r\n' % (json.dumps({
+		'target': 1, 
+		'id': 'testuser2',
+		'password': 'testuser2'
+	})))
+	data = sock_client1.recv(MAX_LENGTH)
+
+	decoded = json.loads(data)
+	access_token = decoded['access_token']
+
+	while True:
+		print '(client1) loop %s' % access_token
+		time.sleep(2)
+
+		sock_client1.send('%s\r\n' % (json.dumps({
+			'target': 2, 
+			'access_token': access_token,
+			'message': 'hello world!'
+		})))
+
+		data = sock_client1.recv(MAX_LENGTH)
+		print 'recv end'
+		if data:
+			print '(client1) response : %s' % data
+
+
+def client2():
+	sock_client2 = socket(AF_INET, SOCK_STREAM)
+	try:
+		sock_client2.connect(ADDR)
+	except Exception as e:
+		print e
+		sys.exit()
+
+	print sock_client2
+
+	sock_client2.send('%s\r\n' % (json.dumps({
+		'target': 1, 
+		'id': 'testuser3',
+		'password': 'testuser3'
+	})))
+
+	while True:
+		print '(client2) loop'
+		time.sleep(1)
+		data = sock_client2.recv(MAX_LENGTH)
+		print 'recv end'
+		if data:
+			print '(client2) response : %s' % data
+
+
+try:
+	thread.start_new_thread(client1, ())
+	thread.start_new_thread(client2, ())
+except Exception as e:
+	print 'exception : %s' % e
+	pass
+
+
+while 1:
+	time.sleep(1)
+	pass
