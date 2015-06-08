@@ -236,20 +236,14 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 	json_object_set_string(root_object, "message", message);
 
 	char response[MAX_LENGTH];
-
-	printf("id : %s / msg : %s\n", sender_id, message);
-
 	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
 	json_value_free(root_value);
 
 	// 현재 접속중인 user들에게 메세지 전송 
 	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
 		if (kh_exist(connected_user_table, k)) {
-
-			sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
-			json_value_free(root_value);
-
-			if( send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response) != -1 ) {
+			struct connected_user* user = kh_value(connected_user_table, k);
+			if( send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, user->mq_id, response) != -1 ) {
 				// success
 			} else {
 				// error
