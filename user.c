@@ -53,11 +53,15 @@ struct connected_user* find_connected_user_by_pk(int pk) {
 }
 
 char* find_user_id_by_access_token(const char* access_token) {
-	khint_t k = kh_get(str, connected_user_table, access_token);
-	if( k == kh_end(connected_user_table) ) {
+	struct connected_user* connected_user = find_connected_user_by_access_token(access_token);
+	if( connected_user == NULL ) {
 		return NULL;
 	}
-	struct user_data* userdata = kh_value(user_table, k);
+
+	struct user_data* userdata = find_user_data_by_pk(connected_user->pk);
+	if( userdata == NULL ) {
+		return NULL;
+	}
 
 	return userdata->id;
 }
@@ -67,7 +71,7 @@ void get_user_info_by_pk(long pk, JSON_Object *user_info) {
 		if (kh_exist(user_table, k)) {
 			struct user_data* userdata = kh_value(user_table, k);
 			if( userdata->pk == pk ) {
-				json_object_set_string(user_info, "id", userdata->id);
+				json_object_set_string(user_info, "user_id", userdata->id);
 				json_object_set_number(user_info, "character_type", userdata->character_type);
 				json_object_set_number(user_info, "level", userdata->level);
 			}
@@ -140,8 +144,8 @@ void broadcast_room(key_t mq_key, char* message, int pk_room) {
 	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
 		if (kh_exist(connected_user_table, k)) {
 			struct connected_user* userdata = kh_value(connected_user_table, k);
-			if( userdata->pk_room == pk_room ) {
-				printf("userdata->pk(%ld)\n", userdata->pk);
+			if( userdata->status == USER_STATUS_IN_ROOM 
+				&& userdata->pk_room == pk_room ) {
 				//broadcasting
 				send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, userdata->mq_id, message);
 			}
