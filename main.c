@@ -280,11 +280,11 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target) {
 	json_object_set_value(root_object, "data", json_value_init_object());
 	JSON_Value *value_data = json_object_get_value(root_object, "data");
 
-	json_object_set_value(json_object(value_data), "users", json_value_init_array());
+	json_object_set_value(json_object(value_data), "user_list", json_value_init_array());
 	JSON_Array *users = json_object_get_array(json_object(value_data), "users");
 	get_lobby_user_list(users);
 
-	json_object_set_value(json_object(value_data), "rooms", json_value_init_array());
+	json_object_set_value(json_object(value_data), "room_list", json_value_init_array());
 	JSON_Array *rooms = json_object_get_array(json_object(value_data), "rooms");
 	get_room_list(rooms);
 
