@@ -25,8 +25,6 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target);
 void route_join_room(JSON_Object *json, key_t mq_key, long target);
 void route_check_room(JSON_Object *json, key_t mq_key, long target);
 void route_game_start(JSON_Object *json, key_t mq_key, long target);
-void broadcast_lobby(key_t mq_key, char* message);
-void broadcast_room(key_t mq_key, char* message, int pk_room);
 
 int main_server_quit;
 
