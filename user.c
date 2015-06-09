@@ -134,11 +134,14 @@ void broadcast_lobby(key_t mq_key, char* message) {
 }
 
 void broadcast_room(key_t mq_key, char* message, int pk_room) {
+	printf("broadcast_room : %s", message);
+
 	// room users
 	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
 		if (kh_exist(connected_user_table, k)) {
 			struct connected_user* userdata = kh_value(connected_user_table, k);
 			if( userdata->pk_room == pk_room ) {
+				printf("userdata->pk(%ld)\n", userdata->pk);
 				//broadcasting
 				send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, userdata->mq_id, message);
 			}

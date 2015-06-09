@@ -356,9 +356,6 @@ void route_join_room(JSON_Object *json, key_t mq_key, long target) {
 	build_simple_response(response, RESULT_OK_JOIN_ROOM);
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
-	// broadcasting to users in lobby and room
-	broadcast_room(mq_key, response, pk_room);
-
 	request_room_update(mq_key, pk_room);
 }
 
