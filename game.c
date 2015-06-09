@@ -294,14 +294,5 @@ void request_room_update(key_t mq_key, long pk_room) {
 
 	char response[MAX_LENGTH];
 	build_simple_response(response, RESULT_OK_REQUEST_ROOM_MEMBER_UPDATE);
-	
-
-	for( int i = 0; i < room->num_of_users; i ++ ) {
-		long pk_user = room->member_pk_list[i];
-		struct connected_user* user = find_connected_user_by_pk(pk_user);
-		if( user != NULL ) {
-			printf("pk_user : %ld, send : %s\n", pk_user, response);
-			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, user->mq_id, response);
-		}
-	}
+	broadcast_room(mq_key, response, pk_room);
 }
