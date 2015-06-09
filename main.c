@@ -23,6 +23,7 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target);
 void route_chatting(JSON_Object *json, key_t mq_key, long target);
 void route_create_room(JSON_Object *json, key_t mq_key, long target);
 void route_join_room(JSON_Object *json, key_t mq_key, long target);
+void route_check_room(JSON_Object *json, key_t mq_key, long target);
 void route_game_start(JSON_Object *json, key_t mq_key, long target);
 void broadcast_lobby(key_t mq_key, char* message);
 void broadcast_room(key_t mq_key, char* message, int pk_room);
@@ -96,6 +97,9 @@ int main() {
 				break;
 			case MSG_TARGET_JOIN_ROOM:
 				route_join_room(json_body, msg_queue_key_id, received.from);
+				break;
+			case MSG_TARGET_CHECK_ROOM:
+				route_check_room(json_body, msg_queue_key_id, received.from);
 				break;
 			case MSG_TARGET_GAME_START:
 				route_game_start(json_body, msg_queue_key_id, received.from);
@@ -317,10 +321,12 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
 	json_value_free(root_value);
 
-	// send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
 	struct connected_user* user = find_connected_user_by_access_token(access_token);
 	join_game_room(pk_room, user->pk);
+
+	request_room_update(mq_key, pk_room);
 
 	//broadcasting to users in lobby
 	broadcast_lobby(mq_key, response);
@@ -358,6 +364,44 @@ void route_join_room(JSON_Object *json, key_t mq_key, long target) {
 	request_room_update(mq_key, pk_room);
 }
 
+void route_check_room(JSON_Object *json, key_t mq_key, long target) {
+	printf("(main) route_check_room\n");
+
+	// validate user
+	const char* access_token = json_object_get_string(json, "access_token");
+	if( validate_user(access_token) != 0 ) {
+		char response[MAX_LENGTH];
+		build_simple_response(response, RESULT_ERROR_INVALID_CONNECTION);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		return;
+	}
+
+	struct connected_user* user = find_connected_user_by_access_token(access_token);
+	if( user->status != USER_STATUS_IN_ROOM ) {
+		// error
+		return;
+	}
+
+	struct game_room* room = find_game_room_by_pk(user->pk_room);
+
+	JSON_Value *root_value = json_value_init_object();
+	JSON_Object *root_object = json_value_get_object(root_value);
+	json_object_set_number(root_object, "result", RESULT_OK_STATE_GAME_ROOM);
+
+	json_object_set_value(root_object, "data", json_value_init_object());
+	JSON_Value *value_data = json_object_get_value(root_object, "data");
+	json_object_set_number(json_object(value_data), "room_id", room->pk_room);
+	json_object_set_value(json_object(value_data), "user_list", json_value_init_array());
+	JSON_Array *json_array_user_list = json_object_get_array(json_object(value_data), "user_list");
+	get_room_user_list(room->pk_room, json_array_user_list);
+
+	char response[MAX_LENGTH];
+	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	json_value_free(root_value);
+
+	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+}
+
 void route_game_start(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_game_start\n");
 
@@ -391,30 +435,4 @@ void route_game_start(JSON_Object *json, key_t mq_key, long target) {
 	}
 
 	notify_game_start(mq_key, room);
-}
-
-void broadcast_lobby(key_t mq_key, char* message){
-	// lobby users
-	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
-		if (kh_exist(connected_user_table, k)) {
-			struct connected_user* userdata = kh_value(connected_user_table, k);
-			if( userdata->status == USER_STATUS_LOBBY ) {
-				//broadcasting
-				send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, userdata->mq_id, message);
-			}
-		}
-	}
-}
-
-void broadcast_room(key_t mq_key, char* message, int pk_room){
-// room users
-	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
-		if (kh_exist(connected_user_table, k)) {
-			struct connected_user* userdata = kh_value(connected_user_table, k);
-			if( userdata->pk_room == pk_room ) {
-				//broadcasting
-				send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, userdata->mq_id, message);
-			}
-		}
-	}	
 }

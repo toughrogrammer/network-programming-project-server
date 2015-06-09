@@ -5,6 +5,7 @@ import sys
 import json
 import time
 import thread
+import pprint
 
 
 HOST = '127.0.0.1'
@@ -14,6 +15,18 @@ ADDR = (HOST, PORT)
 
 def until_crlf(line):
 	return line.split('\r')[0]
+
+def print_response(data):
+	data = data.replace('\r\n', '\n')
+	rows = data.split('\n')
+	for row in rows:
+		if not row:
+			continue
+
+		print '(client1) response :'
+
+		parsed = json.loads(row)
+		print json.dumps(parsed, indent=4, sort_keys=True)
 
 
 def client1():
@@ -41,27 +54,42 @@ def client1():
 	access_token = decoded['access_token']
 
 
+	print 'send request : create room'
 	sock_client1.send('%s\r\n' % (json.dumps({
 		'target': 3, 
 		'access_token': access_token,
 		'title': 'hello world!'
 	})))
 
-	# data = sock_client1.recv(MAX_LENGTH)
+	data = sock_client1.recv(MAX_LENGTH)
+	print_response(data)
+
+	print 'send request : check room'
+	sock_client1.send('%s\r\n' % (json.dumps({
+		'target': 10, 
+		'access_token': access_token
+	})))
+
+	data = sock_client1.recv(MAX_LENGTH)
+	print_response(data)
+	
+
 	# print '(client1) response : %s' % data,
 
+	print 'send request : start game'
 	sock_client1.send('%s\r\n' % (json.dumps({
 		'target': 6, 
 		'access_token': access_token
 	})))
 
 	data = sock_client1.recv(MAX_LENGTH)
-	print '(client1) response : %s' % data,
+	print_response(data)
+
 
 	while True:
 		data = sock_client1.recv(MAX_LENGTH)
 		if data:
-			print '(client1) response : %s' % data,
+			print_response(data)
 
 
 def client2():

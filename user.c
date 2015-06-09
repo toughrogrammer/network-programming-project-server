@@ -62,7 +62,7 @@ char* find_user_id_by_access_token(const char* access_token) {
 	return userdata->id;
 }
 
-void get_user_info_by_pk(int pk, JSON_Object *user_info){
+void get_user_info_by_pk(long pk, JSON_Object *user_info) {
 	for (khint_t k = kh_begin(user_table); k != kh_end(user_table); ++k) {
 		if (kh_exist(user_table, k)) {
 			struct user_data* userdata = kh_value(user_table, k);
@@ -102,18 +102,46 @@ void get_lobby_user_list(JSON_Array *arr) {
 	}
 }
 
-void get_room_user_list(int room_id, JSON_Array *arr){
-	JSON_Value *user_info = json_value_init_object();
-	JSON_Object *user_object = json_value_get_object(user_info);
+void get_room_user_list(long room_id, JSON_Array *arr) {
 	//room users
 	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
 		if (kh_exist(connected_user_table, k)) {
 			struct connected_user* userdata = kh_value(connected_user_table, k);
-			if( userdata->pk_room == room_id ) {
+			if( userdata->status == USER_STATUS_IN_ROOM 
+				&& userdata->pk_room == room_id ) {
+				JSON_Value *user_info = json_value_init_object();
+				JSON_Object *user_object = json_value_get_object(user_info);
+
 				//JSON Object에 ID, type, level넣어서 배열에 추가.
 				get_user_info_by_pk(userdata->pk, user_object);
 				json_array_append_value(arr, user_info);
 			}
 		}
 	}
-}	
+}
+
+void broadcast_lobby(key_t mq_key, char* message) {
+	// lobby users
+	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
+		if (kh_exist(connected_user_table, k)) {
+			struct connected_user* userdata = kh_value(connected_user_table, k);
+			if( userdata->status == USER_STATUS_LOBBY ) {
+				//broadcasting
+				send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, userdata->mq_id, message);
+			}
+		}
+	}
+}
+
+void broadcast_room(key_t mq_key, char* message, int pk_room) {
+	// room users
+	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
+		if (kh_exist(connected_user_table, k)) {
+			struct connected_user* userdata = kh_value(connected_user_table, k);
+			if( userdata->pk_room == pk_room ) {
+				//broadcasting
+				send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, userdata->mq_id, message);
+			}
+		}
+	}	
+}
