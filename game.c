@@ -4,7 +4,19 @@
 
 
 void get_room_list(JSON_Array *arr) {
-	// TODO
+	JSON_Value *room_info = json_value_init_object();
+	JSON_Object *room_object = json_value_get_object(room_info);
+
+	for (khint_t k = kh_begin(game_room_table); k != kh_end(game_room_table); ++k) {
+		if (kh_exist(game_room_table, k)) {
+			struct game_room* room = kh_value(game_room_table, k);
+			json_object_set_number(room_object, "room_id", room->pk_room);
+			json_object_set_string(room_object, "title", room->title);
+			json_object_set_number(room_object, "num_of_users", room->num_of_users);
+			json_object_set_number(room_object, "status", room->num_of_users);
+			json_array_append_value(arr, room_info);
+		}
+	}
 }
 
 struct game_room* find_game_room_by_pk(long pk) {
