@@ -123,11 +123,6 @@ void myFileUpdate( const int pk, const int exp ){
 
 }
 
-
-struct user_data *GetMem( const int pk ){
-	return myFileRetrievePK( pk );
-}
-
 int LoginMem( const char *id, const char *pw ){
 	char str[maxstr];
 	struct user_data *mem = myFileRetrieve( id, pw );

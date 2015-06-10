@@ -156,7 +156,7 @@ void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
 	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, "response") ) {
 		const char* submitted_id = json_object_get_string(json, "id");
 		const char* submitted_password = json_object_get_string(json, "password");
-		const int submitted_character_type = json_object_get_int(json, "character_type");
+		const int submitted_character_type = json_object_get_number(json, "character_type");
 		char response[MAX_LENGTH];
 
 		switch( RegMem( submitted_id, submitted_password, submitted_character_type ) ){
