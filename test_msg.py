@@ -43,6 +43,7 @@ def client1():
 		'password': 'testuser2'
 	})))
 	data = sock_client1.recv(MAX_LENGTH)
+	print_response(data)
 
 	decoded = json.loads(data)
 	access_token = decoded['access_token']
