@@ -13,12 +13,17 @@ ADDR = (HOST, PORT)
 def until_crlf(line):
 	return line.split('\r')[0]
 
-sock_client = socket(AF_INET, SOCK_STREAM)
-try:
-	sock_client.connect(ADDR)
-except Exception as e:
-	print e
-	sys.exit()
+def print_response(data):
+	data = data.replace('\r\n', '\n')
+	rows = data.split('\n')
+	for row in rows:
+		if not row:
+			continue
+
+		print '(client1) response :'
+
+		parsed = json.loads(row)
+		print json.dumps(parsed, indent=4, sort_keys=True)
 
 
 def client1():
@@ -53,8 +58,16 @@ def client1():
 		print '(client1) chaaaaaaaat!'
 
 		data = sock_client1.recv(MAX_LENGTH)
-		if data:
-			print '(client1) response : %s' % data
+		print_response(data)
+
+		sock_client1.send('%s\r\n' % (json.dumps({
+			'target': 5, 
+			'access_token': access_token
+		})))
+		print '(client1) lobby check!'
+
+		data = sock_client1.recv(MAX_LENGTH)
+		print_response(data)
 
 
 def client2():
@@ -82,7 +95,7 @@ def client2():
 
 try:
 	thread.start_new_thread(client1, ())
-	thread.start_new_thread(client2, ())
+	# thread.start_new_thread(client2, ())
 except Exception as e:
 	print 'exception : %s' % e
 	pass

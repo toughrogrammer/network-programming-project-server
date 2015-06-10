@@ -224,7 +224,6 @@ void route_sign_out(JSON_Object *json, key_t mq_key, long target) {
 	char response[MAX_LENGTH];
 	build_simple_response(response, RESULT_OK_REQUEST_LOBBY_UPDATE);
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-	printf("(main) send_message_to_queue\n");
 }
 
 void route_chatting(JSON_Object *json, key_t mq_key, long target) {
