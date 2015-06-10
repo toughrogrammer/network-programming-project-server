@@ -95,7 +95,7 @@ void build_simple_response(char* dest, int code) {
 	JSON_Object *root_object = json_value_get_object(root_value);
 	json_object_set_number(root_object, "result", code);
 
-	sprintf(dest, "%s\r\n", json_serialize_to_string(root_value));
+	serialize_json_to_response(dest, root_value);
 	
 	json_value_free(root_value);
 }
@@ -113,4 +113,10 @@ int validate_user(const char* access_token) {
 	}
 
 	return 0;
+}
+
+void serialize_json_to_response(char *response, JSON_Value* json) {
+	char *str = json_serialize_to_string(json);
+	sprintf(response, "%s\r\n", str);
+	json_free_serialized_string(str);
 }

@@ -10,6 +10,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include "data_structure.h"
+#include "library/parson/parson.h"
 
 
 #define ERROR_LOGGING(content) { fprintf(stderr, "%d : %s\n", __LINE__, (content)); exit(1); }
@@ -27,5 +28,6 @@ void fill_connected_user(struct connected_user* user, int pk, int mq_id, int sta
 void build_simple_response(char* dest, int code);
 long get_time_in_millisec();
 int validate_user(const char* access_token);
+void serialize_json_to_response(char *response, JSON_Value* json);
 
 #endif

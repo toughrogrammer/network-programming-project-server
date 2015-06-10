@@ -177,7 +177,7 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 		fill_connected_user(new_connected_user, user_data->pk, target, USER_STATUS_LOBBY, access_token);
 
 		int ret;
-		khint_t k = kh_put(str, connected_user_table, access_token, &ret);
+		khint_t k = kh_put(str, connected_user_table, strdup(access_token), &ret);
 		kh_value(connected_user_table, k) = new_connected_user;
 	} else {
 		fill_connected_user(connected_user, user_data->pk, target, USER_STATUS_LOBBY, access_token);
@@ -193,7 +193,7 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	json_object_set_string(root_object, "access_token", access_token);
 
 	char response[MAX_LENGTH];
-	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
 
 	if( send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response) != -1 ) {
@@ -248,7 +248,7 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 	json_object_set_string(json_object(value_data), "content", message);
 
 	char response[MAX_LENGTH];
-	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
 
 	// 현재 접속중인 user들에게 메세지 전송 
@@ -288,7 +288,7 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target) {
 
 
 	char response[MAX_LENGTH];
-	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	serialize_json_to_response(response, root_value);
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
 	json_value_free(root_value);
@@ -316,7 +316,7 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 	json_object_set_number(root_object, "room_id", pk_room);
 
 	char response[MAX_LENGTH];
-	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
 
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
@@ -391,7 +391,7 @@ void route_check_room(JSON_Object *json, key_t mq_key, long target) {
 	get_room_user_list(room->pk_room, json_array_user_list);
 
 	char response[MAX_LENGTH];
-	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
 
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);

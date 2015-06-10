@@ -135,7 +135,7 @@ void notify_round_start(key_t mq_key, struct game_room* room) {
 	json_object_set_string(root_object, "quiz_string", "lorem ipsum");
 
 	char response[MAX_LENGTH];
-	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
 
 	for( int i = 0; i < room->num_of_users; i ++ ) {
@@ -158,7 +158,7 @@ void notify_round_end(key_t mq_key, struct game_room* room) {
 	json_object_set_number(root_object, "remain_round", room->total_round - room->curr_round);
 
 	char response[MAX_LENGTH];
-	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
 
 	for( int i = 0; i < room->num_of_users; i ++ ) {
@@ -202,7 +202,7 @@ void notify_game_end(key_t mq_key, struct game_room* room) {
 	json_object_set_string(root_object, "winner_id", userdata->id);
 
 	char response[MAX_LENGTH];
-	sprintf(response, "%s\r\n", json_serialize_to_string(root_value));
+	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
 
 	for( int i = 0; i < room->num_of_users; i ++ ) {
