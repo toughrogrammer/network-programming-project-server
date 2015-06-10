@@ -37,10 +37,10 @@ void myFileCreateLog( const char *str ){
 	fclose( fw );
 }
 
-user_data *myFileRetrieve( const char *id, const char *pw ){
+struct user_data *myFileRetrieve( const char *id, const char *pw ){
 	int i,n;
 	char buf[maxstr];
-	user_data *mem=NULL;
+	struct user_data *mem=NULL;
 	FILE *fr = fopen("MemN.txt","r");
 
 	fscanf(fr,"%d",&n);
@@ -54,7 +54,7 @@ user_data *myFileRetrieve( const char *id, const char *pw ){
 			fscanf( fr,"%*s %*d %*d");
 			continue;
 		}
-		mem = (user_data *)calloc( 1, sizeof(user_data) );
+		mem = (struct user_data *)calloc( 1, sizeof(struct user_data) );
 		strcpy( mem->id, id );
 
 		// pw
@@ -77,10 +77,11 @@ user_data *myFileRetrieve( const char *id, const char *pw ){
 }
 
 void myFileUpdate( const int pk, const int exp ){
-	int i,n;
+	int i,n,curPK;
 	char buf[maxstr];
 	FILE *tmpf = fopen("tmp.txt","w");
 	FILE *fwr = fopen("MemN.txt","r");
+	struct user_data *mem;
 
 	fscanf( fwr, "%d",&n);
 	fclose( fwr );
@@ -97,7 +98,7 @@ void myFileUpdate( const int pk, const int exp ){
 		}
 
 		// info
-		mem = (user_data *)calloc( 1, sizeof(user_data) );
+		mem = (struct user_data *)calloc( 1, sizeof(struct user_data) );
 		mem->pk = curPK;
 		fscanf( fwr, "%s",mem->id );
 		fscanf( fwr, "%s",mem->password );
@@ -123,13 +124,13 @@ void myFileUpdate( const int pk, const int exp ){
 }
 
 
-user_data *GetMem( const int pk ){
+struct user_data *GetMem( const int pk ){
 	return myFileRetrievePK( pk );
 }
 
 int LoginMem( const char *id, const char *pw ){
 	char str[maxstr];
-	user_data *mem = myFileRetrieve( id, pw );
+	struct user_data *mem = myFileRetrieve( id, pw );
 	if( mem == NULL ) // nothing id
 		return -1;
 	if( mem->character_type == 0 ) // wrong pw
@@ -168,4 +169,3 @@ void PushLog( const char *cont ){
 
 	myFileCreateLog(str);
 }
-
