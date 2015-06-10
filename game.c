@@ -212,6 +212,8 @@ void notify_game_end(key_t mq_key, struct game_room* room) {
 			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, user->mq_id, response);
 		}
 	}
+	build_simple_response(response, RESULT_OK_REQUEST_LOBBY_UPDATE);
+	broadcast_lobby(mq_key, response);
 }
 
 long create_game_room(const char* title) {
