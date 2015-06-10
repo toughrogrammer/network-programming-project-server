@@ -90,6 +90,7 @@ void handle_game_room_playing(key_t mq_key, struct game_room* room) {
 		room->curr_round++;
 		if( room->curr_round == room->total_round ) {
 			room->status = GAME_ROOM_STATUS_SHOWING_TOTAL_RESULT;
+			notify_game_end(mq_key, room);
 		} else {
 			room->status = GAME_ROOM_STATUS_SHOWING_ROUND_RESULT;
 			notify_round_end(mq_key, room);
@@ -111,7 +112,6 @@ void handle_game_room_showing_total_result(key_t mq_key, struct game_room* room)
 		room->timer = 0;
 
 		end_game(room->pk_room);
-		notify_game_end(mq_key, room);
 	}
 }
 
@@ -149,12 +149,17 @@ void notify_round_start(key_t mq_key, struct game_room* room) {
 
 void notify_round_end(key_t mq_key, struct game_room* room) {
 	long winner_pk = room->winner_of_round[room->curr_round];
+
 	struct user_data* user = find_user_data_by_pk(winner_pk);
+	char *winner_id = "";
+	if( user != NULL ) {
+		winner_id = user->id;
+	}
 
 	JSON_Value *root_value = json_value_init_object();
 	JSON_Object *root_object = json_value_get_object(root_value);
 	json_object_set_number(root_object, "result", RESULT_OK_ROUND_RESULT);
-	json_object_set_string(root_object, "winner_id", user->id);
+	json_object_set_string(root_object, "winner_id", winner_id);
 	json_object_set_number(root_object, "remain_round", room->total_round - room->curr_round);
 
 	char response[MAX_LENGTH];
@@ -275,7 +280,7 @@ int start_game(long pk_room) {
 	room->status = GAME_ROOM_STATUS_READY;
 	room->curr_round = 0;
 	for( int i = 0; i < MAX_GAME_ROUND; i ++ ) {
-		room->winner_of_round[i] = 0;
+		room->winner_of_round[i] = -1;
 	}
 	strcpy(room->problem, "");
 
