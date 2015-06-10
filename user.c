@@ -66,6 +66,19 @@ char* find_user_id_by_access_token(const char* access_token) {
 	return userdata->id;
 }
 
+char* find_user_id_by_pk(int pk) {
+	for (khint_t k = kh_begin(user_table); k != kh_end(user_table); ++k) {
+		if (kh_exist(user_table, k)) {
+			struct user_data* userdata = kh_value(user_table, k);
+			if( userdata->pk == pk ) {
+				return userdata->id;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 void get_user_info_by_pk(long pk, JSON_Object *user_info) {
 	for (khint_t k = kh_begin(user_table); k != kh_end(user_table); ++k) {
 		if (kh_exist(user_table, k)) {
@@ -73,7 +86,7 @@ void get_user_info_by_pk(long pk, JSON_Object *user_info) {
 			if( userdata->pk == pk ) {
 				json_object_set_string(user_info, "user_id", userdata->id);
 				json_object_set_number(user_info, "character_type", userdata->character_type);
-				json_object_set_number(user_info, "level", userdata->level);
+				json_object_set_number(user_info, "exp", userdata->exp);
 			}
 		}
 	}

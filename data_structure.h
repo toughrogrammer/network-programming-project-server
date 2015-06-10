@@ -11,7 +11,6 @@
 #define MAX_GAME_ROUND 3
 #define MAX_LENGTH_PROBLEM_SENTENCE 128
 
-
 struct message_buffer {
 	long type;
 	long from;
@@ -23,7 +22,7 @@ struct user_data {
 	char id[MAX_LENGTH_ID];
 	char password[MAX_LENGTH_PASSWORD];
 	long character_type;
-	long level;
+	long exp;
 };
 
 struct connected_user {

@@ -3,7 +3,7 @@ CFLAGS = -g
 PATH_BUILD = ./build
 PATH_PARSON = library/parson
 OBJS = $(PATH_BUILD)/*.o
-SRCS = main.c listening.c client_worker.c user.c game.c util.c $(PATH_PARSON)/parson.c
+SRCS = main.c listening.c client_worker.c user.c game.c util.c MemLog.c $(PATH_PARSON)/parson.c
 
 netp:
 	@- echo "build::"

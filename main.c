@@ -12,6 +12,7 @@
 #include "util.h"
 #include "user.h"
 #include "game.h"
+#include "MemLog.h"
 
 
 void init_variables();
@@ -59,6 +60,8 @@ int main() {
 
 	long curr = get_time_in_millisec();
 	long prev = curr;
+
+	PushLog("Server service start!");
 
 	while(! main_server_quit) {
 		struct message_buffer received;
@@ -114,6 +117,7 @@ int main() {
 		update_game_rooms(msg_queue_key_id, diff);
 	}
 
+	PushLog("Server service end!");
 
 	return 0;
 }
@@ -125,26 +129,50 @@ void init_variables() {
 }
 
 void load_data() {
-	int ret;
+	int ret,n;
 	khint_t k;
+	FILE *fr = fopen("MemN.txt","r");
+	fscanf(fr,"%d",&n); // get N
+	fclose(fr);
+	fopen("Member.txt","r");
 
 	// add user data for debugging
-	for( int i = 0; i < 5; i ++ ) {
+	for( int i = 0; i < n; i ++ ) {
 		struct user_data* new_user_data = (struct user_data*)malloc(sizeof(struct user_data));
 		memset(new_user_data, 0, sizeof(struct user_data));
-		new_user_data->pk = i;
-		sprintf(new_user_data->id, "testuser%d", i);
-		sprintf(new_user_data->password, "testuser%d", i);
+
+		fscanf(fr,"%d %s %s %d %d",&new_user_data->pk,new_user_data->id,new_user_data->password\
+			,&new_user_data->character_type,&new_user_data->exp);
 		k = kh_put(pk_int, user_table, i, &ret);
 		kh_value(user_table, k) = new_user_data;
 	}
+	PushLog("Load Member.txt Success");
+	fclose(fr);
 }
 
 void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_sign_up\n");
 
 	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, "response") ) {
-		// success
+		const char* submitted_id = json_object_get_string(json, "id");
+		const char* submitted_password = json_object_get_string(json, "password");
+		const int submitted_character_type = json_object_get_int(json, "character_type");
+		char response[MAX_LENGTH];
+
+		switch( RegMem( submitted_id, submitted_password, submitted_character_type ) ){
+			case 0: // exist id
+			build_simple_response(response, RESULT_ERROR_EXIST_ID);
+			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+			PushLog("Sing up Failed ; Existed ID");
+			break;
+
+			case 1: // success 
+			build_simple_response(response, RESULT_OK_SIGN_UP);
+			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+			char tmp[maxstr];
+			sprintf( tmp, "Sign up Success ; ID : %s",submitted_id);
+			PushLog(tmp);
+		}
 	} else {
 		// error
 	}
@@ -167,6 +195,7 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 		char response[MAX_LENGTH];
 		build_simple_response(response, RESULT_ERROR_INVALID_AUTH);
 		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		PushLog("Login Failed ; Nothing ID");
 		return;
 	}
 
@@ -191,12 +220,18 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	JSON_Object *root_object = json_value_get_object(root_value);
 	json_object_set_number(root_object, "result", RESULT_OK_SIGN_IN);
 	json_object_set_string(root_object, "access_token", access_token);
+	char tmp[maxstr];
+	sprintf( tmp, "Login Success ; ID : %s",submitted_id);
+	PushLog(tmp);
 
 	char response[MAX_LENGTH];
 	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
 
 	if( send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response) != -1 ) {
+		char tmp[maxstr];
+		sprintf( tmp, "Login Success ; ID : %s & access_token : %s",user_data->id,access_token);
+		PushLog(tmp);
 		// success
 	} else {
 		// error
@@ -218,6 +253,10 @@ void route_sign_out(JSON_Object *json, key_t mq_key, long target) {
 	free(kh_value(connected_user_table, k));
 	kh_del(str, connected_user_table, k);
 
+	char tmp[maxstr];
+	sprintf( tmp, "Logout Success ; ID : %s",find_user_id_by_access_token(access_token));
+	PushLog(tmp);
+
 	// logging
 	print_users_status();
 
@@ -236,6 +275,9 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 
 	printf("access_token : %s\n", access_token);
 	const char* sender_id = find_user_id_by_access_token(access_token);
+	char tmp[maxstr];
+	sprintf( tmp, "Received Chatting Message ; ID : %s Message : \"%s\"",sender_id, message);
+	PushLog(tmp);
 
 	JSON_Value *root_value = json_value_init_object();
 	JSON_Object *root_object = json_value_get_object(root_value);
@@ -328,6 +370,10 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 	//broadcasting to users in lobby
 	broadcast_lobby(mq_key, response);
 
+	char tmp[maxstr];
+	sprintf( tmp, "Created Game Room ; ID : %s Room : %s",find_user_id_by_pk(user->pk),pk_room);
+	PushLog(tmp);
+
 	print_users_status();
 }
 
@@ -356,6 +402,10 @@ void route_join_room(JSON_Object *json, key_t mq_key, long target) {
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
 	request_room_update(mq_key, pk_room);
+
+	char tmp[maxstr];
+	sprintf( tmp, "Join Game Room ; ID : %s Room : %s",find_user_id_by_pk(user->pk),pk_room);
+	PushLog(tmp);
 }
 
 void route_check_room(JSON_Object *json, key_t mq_key, long target) {
@@ -429,4 +479,8 @@ void route_game_start(JSON_Object *json, key_t mq_key, long target) {
 	}
 
 	notify_game_start(mq_key, room);
+
+	char tmp[maxstr];
+	sprintf( tmp, "Game Start ; Room : %s",user->pk_room);
+	PushLog(tmp);
 }

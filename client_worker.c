@@ -1,6 +1,7 @@
 #include "client_worker.h"
 #include "constants.h"
 #include "data_structure.h"
+#include "MemLog.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -16,6 +17,9 @@ int client_worker_main_loop(pid_t pid, int sock) {
 		return 1;
 	}
 	printf("(client_worker) msg_queue_key_id : %d\n", msg_queue_key_id);
+	char tmp[maxstr];
+	sprintf( tmp, "Client Accept ; Process : %d\n",pid);
+	PushLog(tmp);
 
 	while(1) {
 		// read when there are bytes in receive queue
