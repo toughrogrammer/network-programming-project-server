@@ -165,21 +165,37 @@ void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
 	const char* submitted_password = json_object_get_string(json, "password");
 	const int submitted_character_type = json_object_get_number(json, "character_type");
 	char response[MAX_LENGTH];
+	int ret, Regret = RegMem( submitted_id, submitted_password, submitted_character_type );
 
-	int result = RegMem( submitted_id, submitted_password, submitted_character_type );
-	switch( result ){
-		case RESULT_REGISTER_EXIST_ID: // exist id
-		build_simple_response(response, RESULT_ERROR_EXIST_ID);
-		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-		PushLog("Sing up Failed ; Existed ID");
-		break;
+	switch( Regret ){
+		case RESULT_REGISTER_EXIST_ID:
+			build_simple_response(response, RESULT_ERROR_EXIST_ID);
+			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+			PushLog("Sign up Failed ; Existed ID");
+			break;
+		default:
+		{
+			// success
+			struct user_data* new_user_data = (struct user_data*)malloc(sizeof(struct user_data));
+			memset(new_user_data, 0, sizeof(struct user_data));
 
-		case RESULT_REGISTER_SUCCESS: // success 
-		build_simple_response(response, RESULT_OK_SIGN_UP);
-		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-		char tmp[maxstr];
-		sprintf( tmp, "Sign up Success ; ID : %s",submitted_id);
-		PushLog(tmp);
+			new_user_data->pk = Regret;
+			new_user_data->character_type = submitted_character_type;
+			new_user_data->exp = 0;
+			strcpy( new_user_data->id, submitted_id );
+			strcpy( new_user_data->password, submitted_password );
+
+			khint_t k = kh_put( pk_int, user_table, Regret, &ret );
+			kh_value( user_table, k ) = new_user_data;
+
+			// response
+			build_simple_response(response, RESULT_OK_SIGN_UP);
+			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+			char tmp[maxstr];
+			sprintf( tmp, "Sign up Success ; ID : %s",submitted_id);
+			PushLog(tmp);
+			break;
+		}
 	}
 }
 
@@ -207,15 +223,18 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	struct connected_user* connected_user = find_connected_user_by_pk(user_data->pk);
 	if( connected_user == NULL ) {
 		// new connection
-		struct connected_user* new_connected_user = (struct connected_user*)malloc(sizeof(struct connected_user));
-		fill_connected_user(new_connected_user, user_data->pk, target, USER_STATUS_LOBBY, access_token);
-
-		int ret;
-		khint_t k = kh_put(str, connected_user_table, strdup(access_token), &ret);
-		kh_value(connected_user_table, k) = new_connected_user;
 	} else {
-		fill_connected_user(connected_user, user_data->pk, target, USER_STATUS_LOBBY, access_token);
+		khint_t k = kh_get(str, connected_user_table, connected_user->access_token);
+		kh_del(str, connected_user_table, k);
 	}
+
+	struct connected_user* new_connected_user = (struct connected_user*)malloc(sizeof(struct connected_user));
+	fill_connected_user(new_connected_user, user_data->pk, target, USER_STATUS_LOBBY, access_token);
+
+	int ret;
+	khint_t k = kh_put(str, connected_user_table, strdup(access_token), &ret);
+	kh_value(connected_user_table, k) = new_connected_user;
+
 
 	// logging
 	print_users_status();

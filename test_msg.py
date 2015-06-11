@@ -13,14 +13,14 @@ ADDR = (HOST, PORT)
 def until_crlf(line):
 	return line.split('\r')[0]
 
-def print_response(data):
+def print_response(prefix, data):
 	data = data.replace('\r\n', '\n')
 	rows = data.split('\n')
 	for row in rows:
 		if not row:
 			continue
 
-		print '(client1) response :'
+		print '%s response :' % prefix
 
 		parsed = json.loads(row)
 		print json.dumps(parsed, indent=4, sort_keys=True)
@@ -34,8 +34,6 @@ def client1():
 		print e
 		sys.exit()
 
-	print sock_client1
-
 
 	sock_client1.send('%s\r\n' % (json.dumps({
 		'target': 1, 
@@ -43,13 +41,13 @@ def client1():
 		'password': 'testuser2'
 	})))
 	data = sock_client1.recv(MAX_LENGTH)
-	print_response(data)
+	print_response('client1', data)
 
 	decoded = json.loads(data)
 	access_token = decoded['access_token']
 
 	while True:
-		time.sleep(2)
+		time.sleep(5)
 
 		sock_client1.send('%s\r\n' % (json.dumps({
 			'target': 2, 
@@ -59,16 +57,16 @@ def client1():
 		print '(client1) chaaaaaaaat!'
 
 		data = sock_client1.recv(MAX_LENGTH)
-		print_response(data)
+		print_response('client1', data)
 
-		sock_client1.send('%s\r\n' % (json.dumps({
-			'target': 5, 
-			'access_token': access_token
-		})))
-		print '(client1) lobby check!'
+		# sock_client1.send('%s\r\n' % (json.dumps({
+		# 	'target': 5, 
+		# 	'access_token': access_token
+		# })))
+		# print '(client1) lobby check!'
 
-		data = sock_client1.recv(MAX_LENGTH)
-		print_response(data)
+		# data = sock_client1.recv(MAX_LENGTH)
+		# print_response(data)
 
 
 def client2():
@@ -78,8 +76,6 @@ def client2():
 	except Exception as e:
 		print e
 		sys.exit()
-
-	print sock_client2
 
 	sock_client2.send('%s\r\n' % (json.dumps({
 		'target': 1, 
@@ -91,12 +87,12 @@ def client2():
 		time.sleep(1)
 		data = sock_client2.recv(MAX_LENGTH)
 		if data:
-			print '(client2) response : %s' % data
+			print_response('client2', data)
 
 
 try:
 	thread.start_new_thread(client1, ())
-	# thread.start_new_thread(client2, ())
+	thread.start_new_thread(client2, ())
 except Exception as e:
 	print 'exception : %s' % e
 	pass
