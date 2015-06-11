@@ -309,6 +309,11 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 		struct game_room* room = find_game_room_by_pk(sender->pk_room);
 		if(room->status == GAME_ROOM_STATUS_PLAYING){
 		//답안모드		
+			//채점
+			if(strcmp(message, room->problem) == 0){
+				if(room->winner_of_round[room->curr_round] == 0)
+					room->winner_of_round[room->curr_round] = sender->pk;
+			}
 			broadcast_room(mq_key, response, sender->pk_room);
 		}else{
 		//채팅모드
