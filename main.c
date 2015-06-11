@@ -235,7 +235,6 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	khint_t k = kh_put(str, connected_user_table, strdup(access_token), &ret);
 	kh_value(connected_user_table, k) = new_connected_user;
 
-
 	// logging
 	print_users_status();
 
@@ -260,6 +259,9 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	} else {
 		// error
 	}
+	//broadcasting to other users
+	build_simple_response(response, RESULT_OK_REQUEST_LOBBY_UPDATE);
+	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 }
 
 void route_sign_out(JSON_Object *json, key_t mq_key, long target) {
