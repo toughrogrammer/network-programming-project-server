@@ -52,6 +52,7 @@ struct user_data *myFileRetrieve( const char *id, const char *pw ){
 	for( i = 0 ; i < n ; ++ i ){
 		// id
 		fscanf( fr, "%*d %s", buf );
+
 		if( strcmp( id, buf ) ){
 			fscanf( fr,"%*s %*d %*d");
 			continue;
@@ -93,10 +94,10 @@ void myFileUpdate( const int pk, const int exp ){
 	// Member -> tmp
 	for( i = 0 ; i < n ; ++ i ){
 		// pk
-		fscanf( fwr, "%d",&curPK);
+		fscanf( fwr, "%ld",&curPK);
 		if( curPK != pk ){
-			fscanf( fwr, "[^\n]");
-			fprintf( tmpf, "%d %s\n",curPK,buf);
+			fscanf( fwr, " %[^\n]",buf);
+			fprintf( tmpf, "%ld %s\n",curPK,buf);
 			continue;
 		}
 
@@ -109,9 +110,8 @@ void myFileUpdate( const int pk, const int exp ){
 		fscanf( fwr, "%*d");
 
 		// write
-		fprintf( tmpf,"%ld %s %s %ld %ld\n",
-			mem->pk, mem->id, mem->password, mem->character_type, mem->exp);
-		break;
+		fprintf( tmpf,"%ld %s %s %ld %ld\n",mem->pk,\
+			mem->id,mem->password,mem->character_type,exp);
 	}
 
 	fclose( fwr );
@@ -121,9 +121,13 @@ void myFileUpdate( const int pk, const int exp ){
 	fwr = fopen("Member.txt","w");
 	tmpf = fopen("tmp.txt","r");
 
-	while( fscanf( tmpf, "%s", buf ) != -1 )
+	while( fscanf( tmpf, "%[^\n]", buf ) != -1 ){
 		fprintf( fwr, "%s\n", buf );
+		fscanf( tmpf, "%*c");
+	}
 
+	fclose( fwr );
+	fclose( tmpf );
 }
 
 int LoginMem( const char *id, const char *pw ){
@@ -141,17 +145,18 @@ int LoginMem( const char *id, const char *pw ){
 
 int RegMem( const char *id, const char *pw, const int img ){
 	char str[maxstr];
+	printf(" REGMEM\n");
 	if( myFileRetrieve( id, NULL ) != NULL ) // exist id
 		return 0;
 	else{ // Success 
+		printf("\n%s %s %d\n",id,pw,img);
 		sprintf(str,"%s %s %d 0",id,pw,img);
 		return myFileCreateMem( str );
 	}
 }
 
-int UpdateExp( const int pk, const int exp ){
+void UpdateExp( const int pk, const int exp ){
 	myFileUpdate( pk, exp );
-	return 0;
 }
 
 void PushLog( const char *cont ){
