@@ -66,8 +66,8 @@ struct user_data *myFileRetrieve( const char *id, const char *pw ){
 		strcpy( mem->password, pw );
 
 		// check OK
-		fscanf( fr, "%d",&mem->character_type);
-		fscanf( fr, "%d",&mem->exp);
+		fscanf( fr, "%ld",&mem->character_type);
+		fscanf( fr, "%ld",&mem->exp);
 
 		break;
 	}
@@ -92,7 +92,7 @@ void myFileUpdate( const int pk, const int exp ){
 		// pk
 		fscanf( fwr, "%d",&curPK);
 		if( curPK != pk ){
-			fscanf( fwr, "[^\n]",buf);
+			fscanf( fwr, "[^\n]");
 			fprintf( tmpf, "%d %s\n",curPK,buf);
 			continue;
 		}
@@ -102,12 +102,12 @@ void myFileUpdate( const int pk, const int exp ){
 		mem->pk = curPK;
 		fscanf( fwr, "%s",mem->id );
 		fscanf( fwr, "%s",mem->password );
-		fscanf( fwr, "%d",&mem->character_type);
+		fscanf( fwr, "%ld",&mem->character_type);
 		fscanf( fwr, "%*d");
 
 		// write
-		fprintf( tmpf,"%d %s %s %d %d\n",mem->pk,\
-			mem->id,mem->password,mem->character_type,mem->exp);
+		fprintf( tmpf,"%ld %s %s %ld %ld\n",
+			mem->pk, mem->id, mem->password, mem->character_type, mem->exp);
 		break;
 	}
 
@@ -148,7 +148,9 @@ int RegMem( const char *id, const char *pw, const int img ){
 }
 
 int UpdateExp( const int pk, const int exp ){
+	// TODO : error check
 	myFileUpdate( pk, exp );
+	return 0;
 }
 
 void PushLog( const char *cont ){

@@ -145,8 +145,12 @@ void load_data() {
 		struct user_data* new_user_data = (struct user_data*)malloc(sizeof(struct user_data));
 		memset(new_user_data, 0, sizeof(struct user_data));
 
-		fscanf(fr,"%d %s %s %d %d",&new_user_data->pk,new_user_data->id,new_user_data->password\
-			,&new_user_data->character_type,&new_user_data->exp);
+		fscanf(fr,"%ld %s %s %ld %ld",
+			&new_user_data->pk,
+			new_user_data->id,
+			new_user_data->password,
+			&new_user_data->character_type,
+			&new_user_data->exp);
 		k = kh_put(pk_int, user_table, i, &ret);
 		kh_value(user_table, k) = new_user_data;
 	}
@@ -372,7 +376,8 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 	broadcast_lobby(mq_key, response);
 
 	char tmp[maxstr];
-	sprintf( tmp, "Created Game Room ; ID : %s Room : %s",find_user_id_by_pk(user->pk),pk_room);
+	const char* userid = find_user_id_by_pk(user->pk);
+	sprintf( tmp, "Created Game Room ; ID : %s Room : %ld", userid, pk_room);
 	PushLog(tmp);
 
 	print_users_status();
@@ -405,7 +410,8 @@ void route_join_room(JSON_Object *json, key_t mq_key, long target) {
 	request_room_update(mq_key, pk_room);
 
 	char tmp[maxstr];
-	sprintf( tmp, "Join Game Room ; ID : %s Room : %s",find_user_id_by_pk(user->pk),pk_room);
+	const char* userid = find_user_id_by_pk(user->pk);
+	sprintf( tmp, "Join Game Room ; ID : %s Room : %ld", userid, pk_room);
 	PushLog(tmp);
 }
 
@@ -482,7 +488,7 @@ void route_game_start(JSON_Object *json, key_t mq_key, long target) {
 	notify_game_start(mq_key, room);
 
 	char tmp[maxstr];
-	sprintf( tmp, "Game Start ; Room : %s",user->pk_room);
+	sprintf( tmp, "Game Start ; Room : %ld", user->pk_room);
 	PushLog(tmp);
 }
 
