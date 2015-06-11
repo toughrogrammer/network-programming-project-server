@@ -9,7 +9,7 @@
 
 void get_room_list(JSON_Array *arr);
 struct game_room* find_game_room_by_pk(long pk);
-
+void print_game_rooms_status();
 void update_game_rooms(key_t mq_key, long dt);
 void handle_game_room_waiting(key_t mq_key, struct game_room* room);
 void handle_game_room_ready(key_t mq_key, struct game_room* room);
