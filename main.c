@@ -317,8 +317,6 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 	char response[MAX_LENGTH];
 	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
-	//자기자신에게 에코
-	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, sender->mq_id, message);
 	//접속 위치 확인
 	long sender_status = sender->status;
 	//로비면 브로드캐스팅
@@ -357,11 +355,11 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target) {
 	JSON_Value *value_data = json_object_get_value(root_object, "data");
 
 	json_object_set_value(json_object(value_data), "user_list", json_value_init_array());
-	JSON_Array *users = json_object_get_array(json_object(value_data), "users");
+	JSON_Array *users = json_object_get_array(json_object(value_data), "user_list");
 	get_lobby_user_list(users);
 
 	json_object_set_value(json_object(value_data), "room_list", json_value_init_array());
-	JSON_Array *rooms = json_object_get_array(json_object(value_data), "rooms");
+	JSON_Array *rooms = json_object_get_array(json_object(value_data), "room_list");
 	get_room_list(rooms);
 
 
