@@ -223,15 +223,18 @@ void route_sign_in(JSON_Object *json, key_t mq_key, long target) {
 	struct connected_user* connected_user = find_connected_user_by_pk(user_data->pk);
 	if( connected_user == NULL ) {
 		// new connection
-		struct connected_user* new_connected_user = (struct connected_user*)malloc(sizeof(struct connected_user));
-		fill_connected_user(new_connected_user, user_data->pk, target, USER_STATUS_LOBBY, access_token);
-
-		int ret;
-		khint_t k = kh_put(str, connected_user_table, strdup(access_token), &ret);
-		kh_value(connected_user_table, k) = new_connected_user;
 	} else {
-		fill_connected_user(connected_user, user_data->pk, target, USER_STATUS_LOBBY, access_token);
+		khint_t k = kh_get(str, connected_user_table, connected_user->access_token);
+		kh_del(str, connected_user_table, k);
 	}
+
+	struct connected_user* new_connected_user = (struct connected_user*)malloc(sizeof(struct connected_user));
+	fill_connected_user(new_connected_user, user_data->pk, target, USER_STATUS_LOBBY, access_token);
+
+	int ret;
+	khint_t k = kh_put(str, connected_user_table, strdup(access_token), &ret);
+	kh_value(connected_user_table, k) = new_connected_user;
+
 
 	// logging
 	print_users_status();
