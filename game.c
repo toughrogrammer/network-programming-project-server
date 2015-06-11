@@ -268,6 +268,35 @@ int join_game_room(long pk_room, long pk_user) {
 	return 0;
 }
 
+int leave_game_room(struct connected_user* user) {
+	struct game_room* room = find_game_room_by_pk(user->pk_room);
+	if( room == NULL ) {
+		return -1;
+	}
+
+	if( room->status != GAME_ROOM_STATUS_WAITING ) {
+		return -2;
+	}
+
+	int index = 0;
+	for( index = 0; index < room->num_of_users; index ++ ){
+		if( room->member_pk_list[index] == user->pk ) {
+			for( int j = index; j < room->num_of_users; j ++ ) {
+				room->member_pk_list[j] = room->member_pk_list[j + 1];
+			}
+			room->member_pk_list[room->num_of_users] = 0;
+			room->num_of_users--;
+
+			user->pk_room = 0;
+			user->status = USER_STATUS_LOBBY;
+			return 0;
+		}
+	}
+
+	// something wrong
+	return -3;
+}
+
 int start_game(long pk_room) {
 	struct game_room* room = find_game_room_by_pk(pk_room);
 	if( room == NULL ) {

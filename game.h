@@ -23,6 +23,7 @@ void notify_game_end(key_t mq_key, struct game_room* room);
 long create_game_room(const char* title);
 int remove_game_room(long pk);
 int join_game_room(long pk_room, long pk_user);
+int leave_game_room(struct connected_user* user);
 int start_game(long pk_room);
 int end_game(long pk_room);
 void request_room_update(key_t mq_key, long pk_room);
