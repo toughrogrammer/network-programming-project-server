@@ -294,6 +294,8 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 	const char* access_token = json_object_get_string(json, "access_token");
 	const char* message = json_object_get_string(json, "message");
 
+	struct connected_user* sender = find_connected_user_by_access_token(access_token);
+
 	printf("access_token : %s\n", access_token);
 	const char* sender_id = find_user_id_by_access_token(access_token);
 	char tmp[maxstr];
@@ -313,16 +315,27 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
 
-	// 현재 접속중인 user들에게 메세지 전송 
-	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
-		if (kh_exist(connected_user_table, k)) {
-			struct connected_user* user = kh_value(connected_user_table, k);
-			if( send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, user->mq_id, response) != -1 ) {
-				// success
-			} else {
-				// error
+	//접속 위치 확인
+	long sender_status = sender->status;
+	//로비면 브로드캐스팅
+	if(sender_status == USER_STATUS_LOBBY){
+		broadcast_lobby(mq_key, response);
+	}
+	else if(sender_status == USER_STATUS_IN_ROOM){
+		struct game_room* room = find_game_room_by_pk(sender->pk_room);
+		if(room->status == GAME_ROOM_STATUS_PLAYING){
+		//답안모드		
+			//채점
+			if(strcmp(message, room->problem) == 0){
+				if(room->winner_of_round[room->curr_round] == 0)
+					room->winner_of_round[room->curr_round] = sender->pk;
 			}
+			broadcast_room(mq_key, response, sender->pk_room);
+		}else{
+		//채팅모드
+			broadcast_room(mq_key, response, sender->pk_room);
 		}
+
 	}
 }
 
