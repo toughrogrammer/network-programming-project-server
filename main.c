@@ -165,21 +165,37 @@ void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
 	const char* submitted_password = json_object_get_string(json, "password");
 	const int submitted_character_type = json_object_get_number(json, "character_type");
 	char response[MAX_LENGTH];
+	int ret, Regret = RegMem( submitted_id, submitted_password, submitted_character_type );
 
-	int result = RegMem( submitted_id, submitted_password, submitted_character_type );
-	switch( result ){
-		case RESULT_REGISTER_EXIST_ID: // exist id
-		build_simple_response(response, RESULT_ERROR_EXIST_ID);
-		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-		PushLog("Sing up Failed ; Existed ID");
-		break;
+	switch( Regret ){
+		case RESULT_REGISTER_EXIST_ID:
+			build_simple_response(response, RESULT_ERROR_EXIST_ID);
+			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+			PushLog("Sign up Failed ; Existed ID");
+			break;
+		default:
+		{
+			// success
+			struct user_data* new_user_data = (struct user_data*)malloc(sizeof(struct user_data));
+			memset(new_user_data, 0, sizeof(struct user_data));
 
-		case RESULT_REGISTER_SUCCESS: // success 
-		build_simple_response(response, RESULT_OK_SIGN_UP);
-		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-		char tmp[maxstr];
-		sprintf( tmp, "Sign up Success ; ID : %s",submitted_id);
-		PushLog(tmp);
+			new_user_data->pk = Regret;
+			new_user_data->character_type = submitted_character_type;
+			new_user_data->exp = 0;
+			strcpy( new_user_data->id, submitted_id );
+			strcpy( new_user_data->password, submitted_password );
+
+			khint_t k = kh_put( pk_int, user_table, Regret, &ret );
+			kh_value( user_table, k ) = new_user_data;
+
+			// response
+			build_simple_response(response, RESULT_OK_SIGN_UP);
+			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+			char tmp[maxstr];
+			sprintf( tmp, "Sign up Success ; ID : %s",submitted_id);
+			PushLog(tmp);
+			break;
+		}
 	}
 }
 

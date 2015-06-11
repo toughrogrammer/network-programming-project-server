@@ -6,7 +6,7 @@ void err( char *str ){
 	exit(1);
 }
 
-void myFileCreateMem( const char *str ){
+int myFileCreateMem( const char *str ){
 	FILE *frw = fopen("MemN.txt","r");
 	FILE *fw = fopen("Member.txt", "a" );
 	int n;
@@ -25,6 +25,8 @@ void myFileCreateMem( const char *str ){
 
 	fclose( frw );
 	fclose( fw );
+
+	return n;
 }
 
 void myFileCreateLog( const char *str ){
@@ -47,7 +49,7 @@ struct user_data *myFileRetrieve( const char *id, const char *pw ){
 	fclose( fr );
 	fr = fopen("Member.txt","r");
 
-	for( i = 0  ; i < n ; ++ i ){
+	for( i = 0 ; i < n ; ++ i ){
 		// id
 		fscanf( fr, "%*d %s", buf );
 		if( strcmp( id, buf ) ){
@@ -58,6 +60,7 @@ struct user_data *myFileRetrieve( const char *id, const char *pw ){
 		strcpy( mem->id, id );
 
 		// pw
+		if( pw == NULL ) break;
 		fscanf( fr, "%s", buf );
 		if( strcmp( pw, buf ) ){
 			fscanf( fr,"%*d %*d");
@@ -66,8 +69,8 @@ struct user_data *myFileRetrieve( const char *id, const char *pw ){
 		strcpy( mem->password, pw );
 
 		// check OK
-		fscanf( fr, "%ld",&mem->character_type);
-		fscanf( fr, "%ld",&mem->exp);
+		fscanf( fr, "%d",&mem->character_type);
+		fscanf( fr, "%d",&mem->exp);
 
 		break;
 	}
@@ -92,7 +95,7 @@ void myFileUpdate( const int pk, const int exp ){
 		// pk
 		fscanf( fwr, "%d",&curPK);
 		if( curPK != pk ){
-			fscanf( fwr, "[^\n]");
+			fscanf( fwr, "[^\n]",buf);
 			fprintf( tmpf, "%d %s\n",curPK,buf);
 			continue;
 		}
@@ -102,12 +105,12 @@ void myFileUpdate( const int pk, const int exp ){
 		mem->pk = curPK;
 		fscanf( fwr, "%s",mem->id );
 		fscanf( fwr, "%s",mem->password );
-		fscanf( fwr, "%ld",&mem->character_type);
+		fscanf( fwr, "%d",&mem->character_type);
 		fscanf( fwr, "%*d");
 
 		// write
-		fprintf( tmpf,"%ld %s %s %ld %ld\n",
-			mem->pk, mem->id, mem->password, mem->character_type, mem->exp);
+		fprintf( tmpf,"%d %s %s %d %d\n",mem->pk,\
+			mem->id,mem->password,mem->character_type,mem->exp);
 		break;
 	}
 
@@ -139,18 +142,15 @@ int LoginMem( const char *id, const char *pw ){
 int RegMem( const char *id, const char *pw, const int img ){
 	char str[maxstr];
 	if( myFileRetrieve( id, NULL ) != NULL ) // exist id
-		return RESULT_REGISTER_EXIST_ID;
+		return 0;
 	else{ // Success 
 		sprintf(str,"%s %s %d 0",id,pw,img);
-		myFileCreateMem( str );
-		return RESULT_REGISTER_SUCCESS;
+		return myFileCreateMem( str );
 	}
 }
 
 int UpdateExp( const int pk, const int exp ){
-	// TODO : error check
 	myFileUpdate( pk, exp );
-	return 0;
 }
 
 void PushLog( const char *cont ){
@@ -166,3 +166,4 @@ void PushLog( const char *cont ){
 
 	myFileCreateLog(str);
 }
+

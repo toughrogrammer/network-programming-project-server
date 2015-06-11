@@ -42,14 +42,16 @@ sock_client.send('%s\r\n' % (json.dumps({
 	'password': 'testuser10',
 	'character_type': 1
 })))
+
 data = sock_client.recv(MAX_LENGTH)
 print_response('client', data)
 
 sock_client.send('%s\r\n' % (json.dumps({
 	'target': 1, 
-	'id': 'testuser2',
-	'password': 'testuser2'
+	'id': 'testuser10',
+	'password': 'testuser10'
 })))
+
 data = sock_client.recv(MAX_LENGTH)
 print_response('client', data)
 
