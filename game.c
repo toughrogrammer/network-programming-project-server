@@ -257,6 +257,7 @@ long create_game_room(const char* title) {
 }
 
 int remove_game_room(long pk) {
+	printf("(main) remove_game_room\n");
 	khint_t k = kh_get(pk_room, game_room_table, pk);
 	if( k == kh_end(game_room_table) ) {
 		return -1;
@@ -312,12 +313,15 @@ int leave_game_room(struct connected_user* user) {
 
 			user->pk_room = 0;
 			user->status = USER_STATUS_LOBBY;
-			return 0;
+			break;
 		}
 	}
 
-	// something wrong
-	return -3;
+	if( room->num_of_users == 0 ) {
+		remove_game_room(room->pk_room);
+	}
+	
+	return 0;
 }
 
 int start_game(long pk_room) {
