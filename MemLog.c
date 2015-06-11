@@ -139,11 +139,11 @@ int LoginMem( const char *id, const char *pw ){
 int RegMem( const char *id, const char *pw, const int img ){
 	char str[maxstr];
 	if( myFileRetrieve( id, NULL ) != NULL ) // exist id
-		return 0;
+		return RESULT_REGISTER_EXIST_ID;
 	else{ // Success 
 		sprintf(str,"%s %s %d 0",id,pw,img);
 		myFileCreateMem( str );
-		return 1;
+		return RESULT_REGISTER_SUCCESS;
 	}
 }
 

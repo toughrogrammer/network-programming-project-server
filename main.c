@@ -153,28 +153,25 @@ void load_data() {
 void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_sign_up\n");
 
-	if( ! send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, "response") ) {
-		const char* submitted_id = json_object_get_string(json, "id");
-		const char* submitted_password = json_object_get_string(json, "password");
-		const int submitted_character_type = json_object_get_number(json, "character_type");
-		char response[MAX_LENGTH];
+	const char* submitted_id = json_object_get_string(json, "id");
+	const char* submitted_password = json_object_get_string(json, "password");
+	const int submitted_character_type = json_object_get_number(json, "character_type");
+	char response[MAX_LENGTH];
 
-		switch( RegMem( submitted_id, submitted_password, submitted_character_type ) ){
-			case 0: // exist id
-			build_simple_response(response, RESULT_ERROR_EXIST_ID);
-			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-			PushLog("Sing up Failed ; Existed ID");
-			break;
+	int result = RegMem( submitted_id, submitted_password, submitted_character_type );
+	switch( result ){
+		case RESULT_REGISTER_EXIST_ID: // exist id
+		build_simple_response(response, RESULT_ERROR_EXIST_ID);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		PushLog("Sing up Failed ; Existed ID");
+		break;
 
-			case 1: // success 
-			build_simple_response(response, RESULT_OK_SIGN_UP);
-			send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-			char tmp[maxstr];
-			sprintf( tmp, "Sign up Success ; ID : %s",submitted_id);
-			PushLog(tmp);
-		}
-	} else {
-		// error
+		case RESULT_REGISTER_SUCCESS: // success 
+		build_simple_response(response, RESULT_OK_SIGN_UP);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		char tmp[maxstr];
+		sprintf( tmp, "Sign up Success ; ID : %s",submitted_id);
+		PushLog(tmp);
 	}
 }
 
