@@ -1,6 +1,7 @@
 #include "game.h"
 #include "user.h"
 #include "constants.h"
+#include "MemLog.h"
 
 
 void get_room_list(JSON_Array *arr) {

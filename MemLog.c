@@ -94,10 +94,10 @@ void myFileUpdate( const int pk, const int exp ){
 	// Member -> tmp
 	for( i = 0 ; i < n ; ++ i ){
 		// pk
-		fscanf( fwr, "%ld",&curPK);
+		fscanf( fwr, "%d",&curPK);
 		if( curPK != pk ){
 			fscanf( fwr, " %[^\n]",buf);
-			fprintf( tmpf, "%ld %s\n",curPK,buf);
+			fprintf( tmpf, "%d %s\n",curPK,buf);
 			continue;
 		}
 
@@ -110,8 +110,8 @@ void myFileUpdate( const int pk, const int exp ){
 		fscanf( fwr, "%*d");
 
 		// write
-		fprintf( tmpf,"%ld %s %s %ld %ld\n",mem->pk,\
-			mem->id,mem->password,mem->character_type,exp);
+		fprintf( tmpf,"%ld %s %s %ld %ld\n",
+			mem->pk, mem->id, mem->password, mem->character_type, mem->exp);
 	}
 
 	fclose( fwr );

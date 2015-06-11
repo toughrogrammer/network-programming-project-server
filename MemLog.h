@@ -12,5 +12,5 @@
 
 
 int RegMem( const char*, const char*, const int );
-int UpdateExp( const int, const int );
+void UpdateExp( const int, const int );
 void PushLog( const char * );
