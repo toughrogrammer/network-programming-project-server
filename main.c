@@ -298,7 +298,8 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 	char response[MAX_LENGTH];
 	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
-
+	//자기자신에게 에코
+	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, sender->mq_id, message);
 	//접속 위치 확인
 	long sender_status = sender->status;
 	//로비면 브로드캐스팅
@@ -319,7 +320,6 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 		//채팅모드
 			broadcast_room(mq_key, response, sender->pk_room);
 		}
-
 	}
 }
 
