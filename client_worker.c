@@ -22,6 +22,8 @@ int client_worker_main_loop(pid_t pid, int sock) {
 	PushLog(tmp);
 
 	while(1) {
+		sleep(0);
+		
 		// read when there are bytes in receive queue
 		int readable_bytes;
 		ioctl(sock, FIONREAD, &readable_bytes);

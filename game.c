@@ -14,7 +14,7 @@ void get_room_list(JSON_Array *arr) {
 			json_object_set_number(room_object, "room_id", room->pk_room);
 			json_object_set_string(room_object, "title", room->title);
 			json_object_set_number(room_object, "num_of_member", room->num_of_users);
-			json_object_set_number(room_object, "state", room->num_of_users);
+			json_object_set_number(room_object, "state", room->status);
 			json_array_append_value(arr, room_info);
 		}
 	}

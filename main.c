@@ -65,6 +65,8 @@ int main() {
 	PushLog("Server service start!");
 
 	while(! main_server_quit) {
+		sleep(0);
+
 		struct message_buffer received;
 		if (msgrcv( msg_queue_key_id, (void *)&received, sizeof(struct message_buffer), MQ_ID_MAIN_SERVER, IPC_NOWAIT) != -1) {
 			printf("(main) msgrcv : %s", received.buffer);
