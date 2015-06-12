@@ -372,17 +372,19 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target) {
 	char response[MAX_LENGTH];
 	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
-	
+
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 }
 
 void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_create_room\n");
 
+	char response[MAX_LENGTH];
+
 	// validate user
 	const char* access_token = json_object_get_string(json, "access_token");
-	if( validate_user(access_token) != 0 ) {
-		char response[MAX_LENGTH];
+	struct connected_user* user = find_connected_user_by_access_token(access_token);
+	if( user == NULL ) {
 		build_simple_response(response, RESULT_ERROR_INVALID_CONNECTION);
 		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 		return;
@@ -391,25 +393,33 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 	const char* title = json_object_get_string(json, "title");
 	long pk_room = create_game_room(title);
 
-
 	JSON_Value *root_value = json_value_init_object();
 	JSON_Object *root_object = json_value_get_object(root_value);
 	json_object_set_number(root_object, "result", RESULT_OK_CREATE_ROOM);
 	json_object_set_number(root_object, "room_id", pk_room);
 
-	char response[MAX_LENGTH];
 	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
+	// send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+	// TODO : if disable above comments, below responses aren't sent to unity client
 
+	int result = join_game_room(pk_room, user->pk);
+	printf("(main) join_game_room = %d\n", result);
+	if( result != 0 ) {
+		build_simple_response(response, RESULT_ERROR_FAIL_TO_JOIN_ROOM);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		return;
+	}
+
+	build_simple_response(response, RESULT_OK_JOIN_ROOM);
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-
-	struct connected_user* user = find_connected_user_by_access_token(access_token);
-	join_game_room(pk_room, user->pk);
 
 	request_room_update(mq_key, pk_room);
 
 	//broadcasting to users in lobby
+	build_simple_response(response, RESULT_OK_REQUEST_LOBBY_UPDATE);
 	broadcast_lobby(mq_key, response);
+
 
 	char tmp[maxstr];
 	const char* userid = find_user_id_by_pk(user->pk);
@@ -529,7 +539,7 @@ void route_game_start(JSON_Object *json, key_t mq_key, long target) {
 }
 
 void route_leave_room(JSON_Object *json, key_t mq_key, long target) {
-	printf("(main) route_game_start\n");
+	printf("(main) route_leave_room\n");
 
 	char response[MAX_LENGTH];
 
