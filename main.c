@@ -346,8 +346,12 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_check_lobby\n");
 
 	const char* access_token = json_object_get_string(json, "access_token");
-	// check this user exist in connected user list
-	// if not exist, respones error to target
+	if( validate_user(access_token) != 0 ) {
+		char response[MAX_LENGTH];
+		build_simple_response(response, RESULT_ERROR_INVALID_CONNECTION);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		return;
+	}
 
 	JSON_Value *root_value = json_value_init_object();
 	JSON_Object *root_object = json_value_get_object(root_value);
@@ -367,9 +371,9 @@ void route_check_lobby(JSON_Object *json, key_t mq_key, long target) {
 
 	char response[MAX_LENGTH];
 	serialize_json_to_response(response, root_value);
-	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-
 	json_value_free(root_value);
+	
+	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 }
 
 void route_create_room(JSON_Object *json, key_t mq_key, long target) {
