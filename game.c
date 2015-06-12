@@ -143,11 +143,14 @@ void notify_game_start(key_t mq_key, struct game_room* room) {
 }
 
 void notify_round_start(key_t mq_key, struct game_room* room) {
+	int random_index = rand() % num_of_problems;
+	strcpy(room->problem, problems[random_index]);
+
 	JSON_Value *root_value = json_value_init_object();
 	JSON_Object *root_object = json_value_get_object(root_value);
 	json_object_set_number(root_object, "result", RESULT_OK_MAKE_QUIZ);
 	json_object_set_number(root_object, "time", MAX_ROUND_TIMER_SUBMIT);
-	json_object_set_string(root_object, "quiz_string", "lorem ipsum");
+	json_object_set_string(root_object, "quiz_string", room->problem);
 
 	char response[MAX_LENGTH];
 	serialize_json_to_response(response, root_value);

@@ -56,4 +56,7 @@ khash_t(pk_int) *user_table;
 khash_t(str) *connected_user_table;
 khash_t(pk_room) *game_room_table;
 
+int num_of_problems;
+char* problems[1024];
+
 #endif

@@ -17,6 +17,8 @@
 
 void init_variables();
 void load_data();
+void load_user_data();
+void load_problem_data();
 void route_sign_up(JSON_Object *json, key_t mq_key, long target);
 void route_sign_in(JSON_Object *json, key_t mq_key, long target);
 void route_sign_out(JSON_Object *json, key_t mq_key, long target);
@@ -135,6 +137,11 @@ void init_variables() {
 }
 
 void load_data() {
+	load_user_data();
+	load_problem_data();
+}
+
+void load_user_data() {
 	int ret,n;
 	khint_t k;
 	FILE *fr = fopen("MemN.txt","r");
@@ -158,6 +165,22 @@ void load_data() {
 	}
 	PushLog("Load Member.txt Success");
 	fclose(fr);
+}
+
+void load_problem_data() {
+	FILE *fp = fopen("problems.txt", "r");
+	if( !fp ) {
+		ERROR_LOGGING("failed to load problem data")
+	}
+
+	fscanf(fp, "%d\n", &num_of_problems);
+	for( int i = 0; i < num_of_problems; i ++ ) {
+		char line[MAX_LENGTH] = { 0, };
+		fgets(line, MAX_LENGTH, fp);
+		line[ strlen(line) - 1 ] = 0; 
+		problems[i] = strdup(line);
+	}
+	fclose(fp);
 }
 
 void route_sign_up(JSON_Object *json, key_t mq_key, long target) {
