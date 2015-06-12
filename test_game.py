@@ -16,14 +16,14 @@ ADDR = (HOST, PORT)
 def until_crlf(line):
 	return line.split('\r')[0]
 
-def print_response(data):
+def print_response(prefix, data):
 	data = data.replace('\r\n', '\n')
 	rows = data.split('\n')
 	for row in rows:
 		if not row:
 			continue
 
-		print '(client1) response :'
+		print '%s response :' % prefix
 
 		parsed = json.loads(row)
 		print json.dumps(parsed, indent=4, sort_keys=True)
@@ -48,7 +48,7 @@ def client1():
 
 	# time.sleep(2)
 	data = sock_client1.recv(MAX_LENGTH)
-	print '(client1) response : %s' % data,
+	print_response('client1', data)
 
 	decoded = json.loads(data)
 	access_token = decoded['access_token']
@@ -62,7 +62,7 @@ def client1():
 	})))
 
 	data = sock_client1.recv(MAX_LENGTH)
-	print_response(data)
+	print_response('client1', data)
 
 	print 'send request : check room'
 	sock_client1.send('%s\r\n' % (json.dumps({
@@ -71,7 +71,7 @@ def client1():
 	})))
 
 	data = sock_client1.recv(MAX_LENGTH)
-	print_response(data)
+	print_response('client1', data)
 	
 
 	# print '(client1) response : %s' % data,
@@ -83,13 +83,13 @@ def client1():
 	})))
 
 	data = sock_client1.recv(MAX_LENGTH)
-	print_response(data)
+	print_response('client1', data)
 
 
 	while True:
 		data = sock_client1.recv(MAX_LENGTH)
 		if data:
-			print_response(data)
+			print_response('client1', data)
 
 
 def client2():
