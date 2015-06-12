@@ -430,8 +430,7 @@ void route_create_room(JSON_Object *json, key_t mq_key, long target) {
 
 	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
-	// send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-	// TODO : unity TCPClient can't receive next message if send above message
+	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
 	int result = join_game_room(pk_room, user->pk);
 	printf("(main) join_game_room = %d\n", result);
@@ -552,8 +551,7 @@ void route_game_start(JSON_Object *json, key_t mq_key, long target) {
 		// error
 	} else {
 		build_simple_response(response, RESULT_OK_START_GAME);
-		// send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
-		// TODO : unity TCPClient can't receive next message if send above message
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 	}
 
 	struct game_room* room = find_game_room_by_pk(user->pk_room);
