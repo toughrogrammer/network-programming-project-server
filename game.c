@@ -92,11 +92,11 @@ void handle_game_room_playing(key_t mq_key, struct game_room* room) {
 		room->timer = 0;
 
 		room->curr_round = room->curr_round + 1;
+		notify_round_end(mq_key, room);
 		if( room->curr_round >= room->total_round ) {
 			room->status = GAME_ROOM_STATUS_SHOWING_TOTAL_RESULT;
 		} else {
 			room->status = GAME_ROOM_STATUS_SHOWING_ROUND_RESULT;
-			notify_round_end(mq_key, room);
 		}
 	}
 }
@@ -168,7 +168,7 @@ void notify_round_start(key_t mq_key, struct game_room* room) {
 void notify_round_end(key_t mq_key, struct game_room* room) {
 	printf("(main) notify_round_end\n");
 
-	long winner_pk = room->winner_of_round[room->curr_round];
+	long winner_pk = room->winner_of_round[room->curr_round - 1];
 	struct user_data* user = find_user_data_by_pk(winner_pk);
 	char *winner_id = "";
 	if( user != NULL ) {

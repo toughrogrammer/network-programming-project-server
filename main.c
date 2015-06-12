@@ -317,16 +317,19 @@ void route_sign_out(JSON_Object *json, key_t mq_key, long target) {
 }
 
 void route_chatting(JSON_Object *json, key_t mq_key, long target) {
-	long destination = 0;
 	printf("(main) route_chatting\n");
 
-	// access token과 message를 json에서 가져옴
 	const char* access_token = json_object_get_string(json, "access_token");
-	const char* message = json_object_get_string(json, "message");
+	if( validate_user(access_token) != 0 ) {
+		char response[MAX_LENGTH];
+		build_simple_response(response, RESULT_ERROR_INVALID_CONNECTION);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		return;
+	}
 
 	struct connected_user* sender = find_connected_user_by_access_token(access_token);
+	const char* message = json_object_get_string(json, "message");
 
-	printf("access_token : %s\n", access_token);
 	const char* sender_id = find_user_id_by_access_token(access_token);
 	char tmp[maxstr];
 	sprintf( tmp, "Received Chatting Message ; ID : %s Message : \"%s\"",sender_id, message);
@@ -344,26 +347,28 @@ void route_chatting(JSON_Object *json, key_t mq_key, long target) {
 	char response[MAX_LENGTH];
 	serialize_json_to_response(response, root_value);
 	json_value_free(root_value);
-	//접속 위치 확인
-	long sender_status = sender->status;
+
 	//로비면 브로드캐스팅
-	if(sender_status == USER_STATUS_LOBBY){
+	if(sender->status == USER_STATUS_LOBBY) {
 		broadcast_lobby(mq_key, response);
 	}
-	else if(sender_status == USER_STATUS_IN_ROOM){
+	else if(sender->status == USER_STATUS_IN_ROOM) {
 		struct game_room* room = find_game_room_by_pk(sender->pk_room);
-		if(room->status == GAME_ROOM_STATUS_PLAYING){
-		//답안모드		
-			//채점
-			if(strcmp(message, room->problem) == 0){
-				if(room->winner_of_round[room->curr_round] == 0)
-					room->winner_of_round[room->curr_round] = sender->pk;
+		if(room->status == GAME_ROOM_STATUS_PLAYING) {
+			// scoring
+			printf("(main) scoring\n");
+			int result_string_compare = strcmp(message, room->problem);
+			if(result_string_compare == 0
+				&& room->winner_of_round[room->curr_round] == -1) {
+				room->winner_of_round[room->curr_round] = sender->pk;
+			} else {
+				printf("(main) wrong answer : %d %ld\n", result_string_compare, room->winner_of_round[room->curr_round]);
 			}
-			broadcast_room(mq_key, response, sender->pk_room);
-		}else{
-		//채팅모드
-			broadcast_room(mq_key, response, sender->pk_room);
+		} else {
+			//채팅모드
 		}
+
+		broadcast_room(mq_key, response, sender->pk_room);
 	}
 }
 
