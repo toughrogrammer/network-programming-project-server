@@ -127,7 +127,7 @@ void clear_message_queue(key_t msg_queue_key_id) {
 	int removed_msg_count = 0;
 	while(1) {
 		struct message_buffer msg;
-		if( msgrcv(msg_queue_key_id, (void*)&msg, sizeof(struct  message_buffer), 0, IPC_NOWAIT) == -1 ) {
+		if( msgrcv(msg_queue_key_id, (void*)&msg, sizeof(struct  message_buffer), 0, 0) == -1 ) {
 			break;
 		}
 		printf("\r(main) cleared message count : %d", ++removed_msg_count);
