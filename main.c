@@ -476,14 +476,17 @@ void route_join_room(JSON_Object *json, key_t mq_key, long target) {
 	}
 
 	struct connected_user* user = find_connected_user_by_access_token(access_token);
+	char response[MAX_LENGTH];
 
 	long pk_room = json_object_get_number(json, "room_id");
 	int result = join_game_room(pk_room, user->pk);
 	if( result < 0 ) {
 		// failed to join game room for many reasons
+		build_simple_response(response, RESULT_ERROR_FAIL_TO_JOIN_ROOM);
+		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+		return;
 	}
 
-	char response[MAX_LENGTH];
 	build_simple_response(response, RESULT_OK_JOIN_ROOM);
 	send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
