@@ -14,7 +14,7 @@
 struct message_buffer {
 	long type;
 	long from;
-	char buffer[256];
+	char buffer[512];
 };
 
 struct user_data {
