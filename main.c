@@ -576,7 +576,6 @@ void route_leave_room(JSON_Object *json, key_t mq_key, long target) {
 	printf("(main) route_leave_room\n");
 
 	char response[MAX_LENGTH];
-
 	// validate user
 	const char* access_token = json_object_get_string(json, "access_token");
 	if( validate_user(access_token) != 0 ) {
@@ -586,6 +585,8 @@ void route_leave_room(JSON_Object *json, key_t mq_key, long target) {
 	}
 
 	struct connected_user* user = find_connected_user_by_access_token(access_token);
+	long pk_room = user->pk_room;
+
 	if( user->status != USER_STATUS_IN_ROOM ) {
 		// error
 		return;
@@ -596,9 +597,11 @@ void route_leave_room(JSON_Object *json, key_t mq_key, long target) {
 	} else {
 		build_simple_response(response, RESULT_OK_LEAVE_ROOM);
 		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
+
+		build_simple_response(response, RESULT_OK_REQUEST_ROOM_MEMBER_UPDATE);
+		broadcast_room(mq_key, response, pk_room);
+
 		build_simple_response(response, RESULT_OK_REQUEST_LOBBY_UPDATE);
 		broadcast_lobby(mq_key, response);
-		build_simple_response(response, RESULT_OK_REQUEST_ROOM_MEMBER_UPDATE);
-		broadcast_room(mq_key, response, user->pk_room);
 	}
 }
