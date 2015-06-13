@@ -8,6 +8,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 
 
 int client_worker_main_loop(int sock) {
@@ -23,8 +24,25 @@ int client_worker_main_loop(int sock) {
 	sprintf( tmp, "Client Accept ; Process : %d\n", pid);
 	PushLog(tmp);
 
+	long prev, curr;
+	prev = get_time_in_millisec();
+
+	int ping_sent = 0;
+
 	while(1) {
 		sleep(0);
+
+		curr = get_time_in_millisec();
+		
+		// ping pong check
+		if( curr - prev > 3000 && ping_sent == 0 ) {
+			prev = curr;
+			ping_sent = 1;
+			send_ping(sock);
+		}
+		if( ping_sent && curr - prev > 5000 ) {
+			break;
+		}
 		
 		// read when there are bytes in receive queue
 		int readable_bytes;
@@ -33,8 +51,13 @@ int client_worker_main_loop(int sock) {
 			char buffer[MAX_LENGTH] = { 0, };
 			ssize_t length = read_line(sock, buffer, MAX_LENGTH);
 			if( length > 0 ) {
-				// send message that is received from client to main server
-				send_message_to_main_server(msg_queue_key_id, sock, buffer);
+				if( ping_sent && strcmp(buffer, "pong\r\n") == 0 ) {
+					ping_sent = 0;
+				} else {
+					// send message that is received from client to main server
+					send_message_to_main_server(msg_queue_key_id, sock, buffer);
+				}
+			} else {
 			}
 		}
 
@@ -53,6 +76,7 @@ int client_worker_main_loop(int sock) {
 		}
 	}
 
+	printf("(cw) quit %d\n", pid);
 	return 0;
 }
 
@@ -70,4 +94,8 @@ int send_message_to_client(int sock, char message[MAX_LENGTH]) {
 	int result = write(sock, message, strlen(message));
 	printf("\t(%d)write : %d\n", sock, result);
 	return 0;
+}
+
+void send_ping(int sock) {
+	send_message_to_client(sock, "ping\r\n");
 }
