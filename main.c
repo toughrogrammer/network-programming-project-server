@@ -15,6 +15,7 @@
 #include "MemLog.h"
 
 
+void clear_message_queue(key_t msg_queue_key_id);
 void init_variables();
 void load_data();
 void load_user_data();
@@ -42,16 +43,8 @@ int main() {
 		return 1;
 	}
 	printf("(main) msg_queue_key_id : %d\n", msg_queue_key_id);
-	// clear message queue
-	int removed_msg_count = 0;
-	while(1) {
-		struct message_buffer msg;
-		if( msgrcv(msg_queue_key_id, (void*)&msg, sizeof(struct  message_buffer), 0, IPC_NOWAIT) == -1 ) {
-			break;
-		}
-		printf("\r(main) cleared message count : %d", ++removed_msg_count);
-	}
-	printf("\n");
+
+	clear_message_queue(msg_queue_key_id);
 
 	pid_t pid = fork();
 	if( pid == 0 ) {
@@ -128,6 +121,18 @@ int main() {
 	PushLog("Server service end!");
 
 	return 0;
+}
+
+void clear_message_queue(key_t msg_queue_key_id) {
+	int removed_msg_count = 0;
+	while(1) {
+		struct message_buffer msg;
+		if( msgrcv(msg_queue_key_id, (void*)&msg, sizeof(struct  message_buffer), 0, IPC_NOWAIT) == -1 ) {
+			break;
+		}
+		printf("\r(main) cleared message count : %d", ++removed_msg_count);
+	}
+	printf("\n");
 }
 
 void init_variables() {
