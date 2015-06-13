@@ -35,7 +35,7 @@ int client_worker_main_loop(int sock) {
 		curr = get_time_in_millisec();
 		
 		// ping pong check
-		if( curr - prev > 3000 && ping_sent == 0 ) {
+		if( curr - prev > 10000 && ping_sent == 0 ) {
 			prev = curr;
 			ping_sent = 1;
 			send_ping(sock);
