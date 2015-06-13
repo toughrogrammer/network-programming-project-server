@@ -3,7 +3,7 @@
 #include "client_worker.h"
 
 
-int listening(pid_t pid, int port) {
+int listening(int port) {
 	struct sockaddr_in servaddr;
 	memset(&servaddr, 0, sizeof(servaddr));
 	int sock_listen = init_listening_socket(&servaddr, port);
@@ -22,8 +22,8 @@ int listening(pid_t pid, int port) {
 		}
 
 		pid_t pid_worker = fork();
-		if( pid_worker != 0 ) {
-			return client_worker_main_loop(pid_worker, sock_client);
+		if( pid_worker == 0 ) {
+			return client_worker_main_loop(sock_client);
 		}
 	}
 

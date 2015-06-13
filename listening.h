@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 
 
-int listening(pid_t pid, int port);
+int listening(int port);
 int init_listening_socket(struct sockaddr_in* addr, int port);
 
 #endif

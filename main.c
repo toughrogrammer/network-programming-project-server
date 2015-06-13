@@ -54,8 +54,8 @@ int main() {
 	printf("\n");
 
 	pid_t pid = fork();
-	if( pid != 0 ) {
-		return listening(pid, 10101);
+	if( pid == 0 ) {
+		return listening(10101);
 	}
 
 	init_variables();

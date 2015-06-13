@@ -10,15 +10,17 @@
 #include <sys/ioctl.h>
 
 
-int client_worker_main_loop(pid_t pid, int sock) {
+int client_worker_main_loop(int sock) {
 	key_t msg_queue_key_id = msgget((key_t)MQ_KEY, IPC_CREAT | 0666);
 	if( msg_queue_key_id == -1 ) {
 		// error!
 		return 1;
 	}
-	printf("(client_worker) msg_queue_key_id : %d\n", msg_queue_key_id);
+
+	pid_t pid = getpid();
+
 	char tmp[maxstr];
-	sprintf( tmp, "Client Accept ; Process : %d\n",pid);
+	sprintf( tmp, "Client Accept ; Process : %d\n", pid);
 	PushLog(tmp);
 
 	while(1) {
@@ -64,6 +66,8 @@ int send_message_to_main_server(key_t mq_key, int sock, char message[MAX_LENGTH]
 }
 
 int send_message_to_client(int sock, char message[MAX_LENGTH]) {
-	write(sock, message, strlen(message));
+	printf("send_message_to_client : %s", message);
+	int result = write(sock, message, strlen(message));
+	printf("\t(%d)write : %d\n", sock, result);
 	return 0;
 }
