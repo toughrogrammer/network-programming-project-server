@@ -20,6 +20,7 @@ void init_variables();
 void load_data();
 void load_user_data();
 void load_problem_data();
+void handle_dead_client_worker(long mq_id);
 void route_sign_up(JSON_Object *json, key_t mq_key, long target);
 void route_sign_in(JSON_Object *json, key_t mq_key, long target);
 void route_sign_out(JSON_Object *json, key_t mq_key, long target);
@@ -64,8 +65,12 @@ int main() {
 
 		struct message_buffer received;
 		if (msgrcv( msg_queue_key_id, (void *)&received, sizeof(struct message_buffer), MQ_ID_MAIN_SERVER, IPC_NOWAIT) != -1) {
-			printf("(main) msgrcv : %s", received.buffer);
+			if( received.dead != 0 ) {
+				handle_dead_client_worker(received.from);
+				continue;
+			}
 
+			printf("(main) msgrcv : %s", received.buffer);
 			JSON_Value *json_value = json_parse_string(received.buffer);
 			if( json_value == NULL ) {
 				// failed to parsing message
@@ -186,6 +191,21 @@ void load_problem_data() {
 		problems[i] = strdup(line);
 	}
 	fclose(fp);
+}
+
+void handle_dead_client_worker(long mq_id) {
+	printf("(main) handle_dead_client_worker %ld\n", mq_id);
+	for (khint_t k = kh_begin(connected_user_table); k != kh_end(connected_user_table); ++k) {
+		if (kh_exist(connected_user_table, k)) {
+			struct connected_user* userdata = kh_value(connected_user_table, k);
+			if( userdata->mq_id == mq_id ) {
+				kh_del(str, connected_user_table, k);
+				break;
+			}
+		}
+	}
+
+	print_users_status();
 }
 
 void route_sign_up(JSON_Object *json, key_t mq_key, long target) {

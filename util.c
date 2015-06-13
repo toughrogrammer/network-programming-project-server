@@ -71,6 +71,7 @@ void str_tolower(char* str) {
 
 int send_message_to_queue(key_t mq_key, long from, long to, const char* message) {
 	struct message_buffer msg;
+	memset(&msg, 0, sizeof(msg));
 	msg.type = to;
 	msg.from = from;
 	strcpy(msg.buffer, message);

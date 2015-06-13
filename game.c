@@ -311,7 +311,7 @@ int leave_game_room(struct connected_user* user) {
 			for( int j = index; j < room->num_of_users; j ++ ) {
 				room->member_pk_list[j] = room->member_pk_list[j + 1];
 			}
-			room->member_pk_list[room->num_of_users] = 0;
+			room->member_pk_list[room->num_of_users - 1] = 0;
 			room->num_of_users--;
 
 			user->pk_room = 0;

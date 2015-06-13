@@ -76,6 +76,13 @@ int client_worker_main_loop(int sock) {
 		}
 	}
 
+	struct message_buffer msg;
+	memset(&msg, 0, sizeof(msg));
+	msg.type = MQ_ID_MAIN_SERVER;
+	msg.from = sock;
+	msg.dead = pid;
+	msgsnd(msg_queue_key_id, (void *)&msg, sizeof(struct message_buffer), IPC_NOWAIT);
+
 	printf("(cw) quit %d\n", pid);
 	return 0;
 }
