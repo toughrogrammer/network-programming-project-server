@@ -111,17 +111,17 @@ void handle_game_room_showing_round_result(key_t mq_key, struct game_room* room)
 }
 
 void handle_game_room_showing_total_result(key_t mq_key, struct game_room* room) {
-	int i;
-	struct user_data *usr;
-
-	for( i = 0 ; i < room->num_of_users ; ++ i ){
-		usr = find_user_data_by_pk( room->member_pk_list[i] );
-		usr->exp += 100;
-		UpdateExp( usr->pk, usr->exp );
-	}
-
 	if( room->timer > MAX_ROUND_TIMER_SHOW_TOTAL_RESULT ) {
 		room->timer = 0;
+
+		int i;
+		struct user_data *usr;
+
+		for( i = 0 ; i < room->num_of_users ; ++ i ){
+			usr = find_user_data_by_pk( room->member_pk_list[i] );
+			usr->exp += 500;
+			UpdateExp( usr->pk, usr->exp );
+		}
 
 		end_game(room->pk_room);
 		notify_game_end(mq_key, room);

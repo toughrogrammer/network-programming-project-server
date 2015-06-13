@@ -110,8 +110,8 @@ void myFileUpdate( const int pk, const int exp ){
 		fscanf( fwr, "%*d");
 
 		// write
-		fprintf( tmpf,"%ld %s %s %ld %ld\n",
-			mem->pk, mem->id, mem->password, mem->character_type, mem->exp);
+		fprintf( tmpf,"%ld %s %s %ld %d\n",
+			mem->pk, mem->id, mem->password, mem->character_type, exp);
 	}
 
 	fclose( fwr );
