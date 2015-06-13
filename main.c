@@ -489,6 +489,9 @@ void route_join_room(JSON_Object *json, key_t mq_key, long target) {
 
 	request_room_update(mq_key, pk_room);
 
+	build_simple_response(response, RESULT_OK_REQUEST_LOBBY_UPDATE);
+	broadcast_lobby(mq_key, response);
+
 	char tmp[maxstr];
 	const char* userid = find_user_id_by_pk(user->pk);
 	sprintf( tmp, "Join Game Room ; ID : %s Room : %ld", userid, pk_room);
@@ -595,13 +598,13 @@ void route_leave_room(JSON_Object *json, key_t mq_key, long target) {
 	if( leave_game_room(user) != 0 ) {
 		// error
 	} else {
+		build_simple_response(response, RESULT_OK_REQUEST_LOBBY_UPDATE);
+		broadcast_lobby(mq_key, response);
+
 		build_simple_response(response, RESULT_OK_LEAVE_ROOM);
 		send_message_to_queue(mq_key, MQ_ID_MAIN_SERVER, target, response);
 
 		build_simple_response(response, RESULT_OK_REQUEST_ROOM_MEMBER_UPDATE);
 		broadcast_room(mq_key, response, pk_room);
-
-		build_simple_response(response, RESULT_OK_REQUEST_LOBBY_UPDATE);
-		broadcast_lobby(mq_key, response);
 	}
 }
