@@ -155,9 +155,15 @@ void load_user_data() {
 	int ret,n;
 	khint_t k;
 	FILE *fr = fopen("MemN.txt","r");
+	if ( fr == NULL ) {
+		ERROR_LOGGING("cannot open file - MemN.txt")
+	}
 	fscanf(fr,"%d",&n); // get N
 	fclose(fr);
-	fopen("Member.txt","r");
+	fr = fopen("Member.txt","r");
+	if ( fr == NULL ) {
+		ERROR_LOGGING("cannot open file - Member.txt")
+	}
 
 	// add user data for debugging
 	for( int i = 0; i < n; i ++ ) {
