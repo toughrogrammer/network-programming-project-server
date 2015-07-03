@@ -47,13 +47,13 @@ int main() {
 
 	clear_message_queue(msg_queue_key_id);
 
+	init_variables();
+	load_data();
+
 	pid_t pid = fork();
 	if( pid == 0 ) {
 		return listening(10101);
 	}
-
-	init_variables();
-	load_data();
 
 	long curr = get_time_in_millisec();
 	long prev = curr;
