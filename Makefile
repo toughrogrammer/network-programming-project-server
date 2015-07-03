@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g
+CFLAGS = -g -std=c99
 PATH_BUILD = ./build
 PATH_PARSON = library/parson
 OBJS = $(PATH_BUILD)/*.o
